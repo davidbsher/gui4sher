@@ -756,7 +756,7 @@ class Label(GraphicsObject):
     
     def _draw(self, canvas):
         p = self.anchor
-        return canvas.create_text(p.x,p.y,anchor='w',fill=self.get_outline(),text=self.get_text(),font=self.get_font(), justify=self.get_justify())
+        return canvas.create_text(p.x,p.y,anchor='nw',fill=self.get_outline(),text=self.get_text(),font=self.get_font(), justify=self.get_justify())
         
     def _move(self, dx, dy):
         self.anchor.move(dx,dy)
@@ -858,7 +858,7 @@ class Entry(GraphicsObject):
 
     def _draw(self, canvas):
         p = self.anchor
-        the_entry = canvas.create_window(p.x,p.y,window=self.frm,anchor='w')
+        the_entry = canvas.create_window(p.x,p.y,window=self.frm,anchor='nw')
         self.entry.pack()
         self.entry.focus_set()
         return the_entry
@@ -1006,7 +1006,7 @@ class Button(GraphicsObject):
 
     def _draw(self, canvas):
         p = self.anchor
-        the_button = canvas.create_window(p.x,p.y,window=self.frm,anchor='w')
+        the_button = canvas.create_window(p.x,p.y,window=self.frm,anchor='nw')
         self.button.pack()
         return the_button
 
@@ -1131,8 +1131,8 @@ class List(GraphicsObject):
         self.frm = tk.Frame(graphics.master)
         # height is the number of items but it is at least 1 and <= 5
         self.set_height(len(items))
-        if self.get_height() == 0: self.set_height(1)
-        elif self.get_height() > 5 : self.set_height(5)
+        if int(self.get_height()) == 0: self.set_height(1)
+        elif int(self.get_height()) > 5 : self.set_height(5)
         self.set_width(1)
         self.scroll = tk.Scrollbar(self.frm)
         self.scroll.pack(side=tk.RIGHT, fill=tk.Y)
@@ -1206,7 +1206,7 @@ class List(GraphicsObject):
       ''' Adds item into list. '''
       self.list.insert(tk.END,item)
       # if item is wider than list make list wider
-      if len(item) > self.get_width() : self.set_width(len(item))
+      if len(item) > int(self.get_width()) : self.set_width(len(item))
       if self.id:
         save_gui4sher() # update the save file
         root.update()
