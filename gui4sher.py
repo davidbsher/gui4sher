@@ -12,7 +12,7 @@ from contextlib import redirect_stdout
 
 # begin shell not in app
 # redirect stderr and stdout to strings
-GUI_DEBUG=True   # can turn on and off debugging by changing this
+GUI_DEBUG=False   # can turn on and off debugging by changing this
 def debug_print(to_print,end=''):
   ''' calls a print statement and puts it into the shell window '''
   global shell
@@ -248,11 +248,13 @@ class MouseCanvas(tk.Canvas):
 graphics = MouseCanvas()
 graphics.pack(fill=tk.BOTH, expand = 1)
 
-
+# not saved
 ''' code here manages copyright notice '''
-
+# not saved
 authors = 'David B. Sher'
+# not saved
 thanks = 'John Zelle'
+# not saved
 year = '2020'
 
 copyright_string = tk.StringVar()
@@ -265,18 +267,21 @@ def add_author(auth):
   global authors
   authors += ' and ' + auth
   copyright_string.set('Copyright {} {} with thanks to {}'.format(authors,year,thanks))
+  save_gui4sher()
 
 ''' sets the copyright year to the present year '''
 def update_year():
   global year
   year = datetime.today().year
   copyright_string.set('Copyright {} {} with thanks to {}'.format(authors,year,thanks))
+  save_gui4sher()
 
 ''' adds an author to the copyright statement '''
 def add_thanks(thank):
   global thanks
   thanks += ' and ' + thank
   copyright_string.set('Copyright {} {} with thanks to {}'.format(authors,year,thanks))
+  save_gui4sher()
 
 ''' Copyright David B. Sher 2020 '''
 
@@ -1340,6 +1345,11 @@ def save_gui4sher():
   # import a clicks file if one exists
   if os.path.isfile(clicks_file):
     print(NO_SAVE+'\nfrom '+base_name(clicks_file)+' import *',file=saver,flush = True)
+  # put in copyright line info
+  print(NO_SAVE+"\n''' code here manages copyright notice '''",file=saver,flush = True)
+  print(NO_SAVE+'\nauthors = "'+authors+'"',file=saver,flush = True)
+  print(NO_SAVE+'\nthanks = "'+thanks+'"',file=saver,flush = True)
+  print(NO_SAVE+'\nyear = "'+year+'"',file=saver,flush = True)
   # copy all the lines from reader to saver except code lines with comment # not saved
   for line in reader:
     if 0 == line.find(NO_SAVE):
@@ -1350,6 +1360,8 @@ def save_gui4sher():
   # put in the save file name
   print(NO_SAVE+"\nsave_file = '"+saver.name+"'",file=saver,flush=True)
   print(NO_SAVE+"\nclicks_file = '"+clicks_file+"'",file=saver,flush=True)
+  # set up title of project
+  print(NO_SAVE+'\nchange_title(\'Project in '+save_file+' put button click functions in '+clicks_file+'\')',file=saver,flush = True)
   # put in comment establishing objects
   print("''' All the objects in the graphics are below '''",file=saver,flush=True)
   # put commands to put every object drawn on graphics window into saver
@@ -1395,6 +1407,13 @@ def make_app():
         print(line.replace(base_name(save_file)+'.',''),end='',file=saver,flush=True)
         debug_print('''Copied {}
 '''.format(line))
+
+  # put in copyright line info
+  print(NO_SAVE+"\n''' code here manages copyright notice '''",file=saver,flush = True)
+  print(NO_SAVE+'\nauthors = "'+authors+'"',file=saver,flush = True)
+  print(NO_SAVE+'\nthanks = "'+thanks+'"',file=saver,flush = True)
+  print(NO_SAVE+'\nyear = "'+year+'"',file=saver,flush = True)
+
   read_lines = True # this is true when one should copy lines from the file into the app
   # copy all the lines from reader to saver except code lines with comment # not saved
   for line in reader:
@@ -1415,6 +1434,9 @@ def make_app():
         read_lines = True
   # don't do any saving since app won't modify
   print("def save_gui4sher(): return None\n",file=saver,flush=True)
+  # set up app title
+  print('change_title("'+base_name(app_file)+'")',file=saver,flush = True)
+  
   # put in comment establishing objects
   print("''' All the objects in the graphics are below '''",file=saver,flush=True)
   # put commands to put every object drawn on graphics window into saver
