@@ -1,0 +1,7 @@
+## MAIN DEFAULTS
+DirectoryIndex index.html index.htm index.php
+DefaultLanguage en-US
+
+## FORCE FILE TO DOWNLOAD INSTEAD OF APPEAR IN BROWSER
+# http://www.htaccesselite.com/addtype-addhandler-action-vf6.html
+AddType application/octet-stream .py
