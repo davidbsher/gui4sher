@@ -272,7 +272,7 @@ def add_author(auth):
 ''' sets the copyright year to the present year '''
 def update_year():
   global year
-  year = datetime.today().year
+  year = str(datetime.now().year)
   copyright_string.set('Copyright {} {} with thanks to {}'.format(authors,year,thanks))
   save_gui4sher()
 
