@@ -1626,7 +1626,7 @@ def place_circle(name='',fill='',outline='black',width=1):
   graphics.toggle_tracking()
   say('Click on the center of the circle "'+name+'"',color='purple')
   center = graphics.get_mouse_click()
-  dot = Circle(corner,3) # dot to put on screen
+  dot = Circle(center,3) # dot to put on screen
   dot.set_fill('darkgray')
   dot.draw()
   say('Click on the circumference of the circle "'+name+'"',color='purple')
