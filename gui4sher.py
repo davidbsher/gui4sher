@@ -1116,6 +1116,179 @@ class Button(GraphicsObject):
       return '''
 '''.join(exec_lines)
 
+class Check(GraphicsObject):
+
+    def __init__(self, p, text):
+        GraphicsObject.__init__(self)
+        self.anchor = p.clone()
+        #print self.anchor
+        self.text = text
+        self.anchor = p.clone()
+        self.set_fill('#EEEEEE')
+        self.set_outline("black")
+        self.set_font(("sanserif", 14,'bold'))
+        self.set_justify('center')
+        self.frm = tk.Frame(graphics.master)
+        self.set_width(len(text))
+        self.checked = tk.BooleanVar()
+        self.set_checked(False)
+        # create a new clicks file if one doesn't exist
+# not saved
+        if not os.path.isfile(clicks_file): create_clicks()
+        # add a click command if one exists
+        try: exec('self.command = '+self.get_name()+'_click')
+        except (NameError, AttributeError): self.command = None # otherwise no command
+
+        if self.command == None:
+          self.button = tk.Checkbutton(self.frm,
+                              width = len(text),
+                              text=text,
+                              bg = self.get_fill(),
+                              fg = self.get_outline(),
+                              font = self.get_font(),
+                              justify = self.get_justify(),
+                              variable=self.checked,
+                              onvalue=True,offvalue=False)
+        else:
+          self.button = tk.Checkbutton(self.frm,
+                              width = len(text),
+                              text=text,
+                              bg = self.get_fill(),
+                              fg = self.get_outline(),
+                              font = self.get_font(),
+                              justify = self.get_justify(),
+                              variable=self.checked,
+                              onvalue=True,offvalue=False,
+                              command = self.handle_click)
+          
+
+    def __repr__(self):
+        return "Button({}, {})".format(self.anchor, self.text)
+
+    def _draw(self, canvas):
+        p = self.anchor
+        the_button = canvas.create_window(p.x,p.y,window=self.frm,anchor='nw')
+        self.button.pack()
+        return the_button
+
+    def handle_click(self):
+      ''' if it exists call the return function from the clicks file '''
+      # do a return command if the return function exists
+      try: exec(self.get_name()+'_click()')
+      except (NameError, AttributeError): return None # otherwise no return behavior
+      except Error as e: say(e,color='red',font=('Consolas', 12, 'bold')) # output error
+      except Exception as exp: say(exp,color='red',font=('Consolas', 12, 'bold')) # output Exception
+
+    def get_checked(self):
+      ''' gets whether the button is checked '''
+      return self.checked.get()
+
+    def set_checked(self,value):
+      ''' sets the check to either true or false '''
+      self.checked.set(value)
+      if self.id:
+        save_gui4sher() # update the save file
+        root.update()
+      
+
+    def set_name(self, name):
+        """Set name of button to name"""
+        self.name = name
+        # add a click command if one exists
+        try: exec('self.command = '+self.get_name()+'_click')
+        except (NameError, AttributeError): self.command = None # otherwise no command
+        if self.command != None:
+          self.button.config(command=self.command)
+        if self.id:
+            save_gui4sher() # update the save file
+            root.update()
+
+
+    def set_text(self,text):
+      self.text = text
+      self.button.config(text=self.get_text())
+      self.set_width(len(self.get_text()))
+      if self.id:
+          save_gui4sher() # update the save file
+          root.update()
+
+    def get_text(self):
+        return self.text
+
+    def _move(self, dx, dy):
+        self.anchor.move(dx,dy)
+
+    def get_anchor(self):
+        return self.anchor.clone()
+
+    def clone(self):
+        other = Button(self.anchor, self.get_text())
+        other.config = self.config.copy()
+        other.set_name(self.name)
+        other.text = self.text
+        return other
+
+    def set_justify(self,justify):
+      self.justify = justify
+      if self.id:
+          self.button.config(justify=self.get_justify())
+          save_gui4sher() # update the save file
+          root.update()
+
+    def get_justify(self):
+      return self.justify
+
+    def set_font(self,font):
+      self.font = font
+      if self.id:
+          self.button.config(font=self.get_font())
+          save_gui4sher() # update the save file
+          root.update()
+
+    def get_font(self):
+      return self.font
+
+    def set_fill(self, color):
+        """Set interior color to color"""
+        self.fill = color
+        if self.id:
+          self.button.config(bg=self.get_fill())
+          save_gui4sher() # update the save file
+          root.update()
+
+    def set_outline(self, color):
+        """Set outline color to color"""
+        self.outline = color
+        if self.id:
+          self.button.config(fg=self.get_outline())
+          save_gui4sher() # update the save file
+          root.update()
+
+    def set_width(self, width):
+        """Set line weight to width"""
+        self.width = width
+        if self.id:
+          self.button.config(width=self.get_width())
+          save_gui4sher() # update the save file
+          root.update()
+
+
+
+    def to_exec(self):
+      ''' creates commands to create the line '''
+      exec_lines = [ self.name+ ' = ' + self.__class__.__name__ +'(Point('+str(self.anchor.x)+','+str(self.anchor.y)+'),"'+str(self.get_text())+'")',
+                     self.name + '.set_name(\'' + self.name + '\')',
+                     self.name + '.set_fill(\''+ self.get_fill() + '\')',
+                     self.name + ".set_outline('"+ self.get_outline() + "')",
+                     self.name + ".set_width('"+ str(self.get_width())+ "')",
+                     self.name + ".set_text('"+ self.get_text()+ "')",
+                     self.name + '.set_font(' + str(self.get_font()) + ')',
+                     self.name + '.set_justify(\''+self.get_justify() + '\')',
+                     self.name + '.set_checked(\''+str(self.get_checked()) + '\')',
+                     self.name + '.draw()'
+                     ]
+      return '''
+'''.join(exec_lines)
 
 class List(GraphicsObject):
 
@@ -1522,20 +1695,24 @@ def valid_name(name):
       name = ask('Something is wrong with '+name+', Enter a new name')
   return name
 
+def mouse_ask(to_print,color='darkgreen',font=('serif',12),end=': '):
+  ''' Prompts the user and returns a point that the user clicked on in the graphics window. '''
+  graphics.toggle_tracking()
+  say(to_print,color=color,font=font)
+  to_return = graphics.get_mouse_click()
+  graphics.toggle_tracking()
+  return to_return
+
 def place_rectangle(name='',fill='',outline='black',width=1):
   ''' Interactive placement of a rectangle. '''
   name = valid_name(name) # make sure the name of the object is valid
   # get the corners of the rectangle
-  graphics.toggle_tracking()
-  say('Click on a corner of rectangle "'+name+'"',color='purple')
-  corner = graphics.get_mouse_click()
+  corner = mouse_ask('Click on a corner of rectangle "'+name+'"')
   dot = Circle(corner,3) # dot to put on screen
   dot.set_fill('darkgray')
   dot.draw()
-  say('Click on the opposite corner of rectangle "'+name+'"',color='purple')
-  opposite = graphics.get_mouse_click()
+  opposite = mouse_ask('Click on the opposite corner of rectangle "'+name+'"')
   dot.undraw() # don't need dot anymore
-  graphics.toggle_tracking()
   # make the rectangle
   rect = Rectangle(corner,opposite)
   rect.set_name(name)
@@ -1550,16 +1727,12 @@ def place_oval(name='',fill='',outline='black',width=1):
   ''' Interactive placement of a oval. '''
   name = valid_name(name) # make sure the name of the object is valid
   # get the corners of the rectangle enclosing
-  graphics.toggle_tracking()
-  say('Click on a corner of rectangle that encloses the oval "'+name+'"',color='purple')
-  corner = graphics.get_mouse_click()
+  corner = mouse_ask('Click on a corner of rectangle that encloses the oval "'+name+'"')
   dot = Circle(corner,3) # dot to put on screen
   dot.set_fill('darkgray')
   dot.draw()
-  say('Click on the opposite corner of rectangle that encloses the oval "'+name+'"',color='purple')
-  opposite = graphics.get_mouse_click()
+  opposite = mouse_ask('Click on the opposite corner of rectangle that encloses the oval "'+name+'"')
   dot.undraw() # don't need dot anymore
-  graphics.toggle_tracking()
   # make the oval
   oval = Oval(corner,opposite)
   oval.set_name(name)
@@ -1574,16 +1747,12 @@ def place_line(name='',fill='',outline='black',width=1):
   ''' Interactive placement of a line. '''
   name = valid_name(name) # make sure the name of the object is valid
   # get the corners of the rectangle enclosing
-  graphics.toggle_tracking()
-  say('Click on an endpoint of "'+name+'"',color='purple')
-  corner = graphics.get_mouse_click()
+  corner = mouse_ask('Click on an endpoint of "'+name+'"')
   dot = Circle(corner,3) # dot to put on screen
   dot.set_fill('darkgray')
   dot.draw()
-  say('Click on the other endpoint of "'+name+'"',color='purple')
-  opposite = graphics.get_mouse_click()
+  opposite = mouse_ask('Click on the other endpoint of "'+name+'"')
   dot.undraw() # don't need dot anymore
-  graphics.toggle_tracking()
   # make the Line
   line = Line(corner,opposite)
   line.set_name(name)
@@ -1598,16 +1767,12 @@ def place_dashed_line(name='',fill='',outline='black',width=1,dash=(5,5)):
   ''' Interactive placement of a line. '''
   name = valid_name(name) # make sure the name of the object is valid
   # get the corners of the rectangle enclosing
-  graphics.toggle_tracking()
-  say('Click on an endpoint of "'+name+'"',color='purple')
-  corner = graphics.get_mouse_click()
+  corner = mouse_ask('Click on an endpoint of "'+name+'"')
   dot = Circle(corner,3) # dot to put on screen
   dot.set_fill('darkgray')
   dot.draw()
-  say('Click on the other endpoint of "'+name+'"',color='purple')
-  opposite = graphics.get_mouse_click()
+  opposite = mouse_ask('Click on the other endpoint of "'+name+'"')
   dot.undraw() # don't need dot anymore
-  graphics.toggle_tracking()
   # make the Line
   line = Dashed_Line(corner,opposite)
   line.set_name(name)
@@ -1623,16 +1788,12 @@ def place_circle(name='',fill='',outline='black',width=1):
   ''' Interactive placement of a circle. '''
   name = valid_name(name) # make sure the name of the object is valid
   # get the center and radius
-  graphics.toggle_tracking()
-  say('Click on the center of the circle "'+name+'"',color='purple')
-  center = graphics.get_mouse_click()
+  center = mouse_ask('Click on the center of the circle "'+name+'"'+name+'"')
   dot = Circle(center,3) # dot to put on screen
   dot.set_fill('darkgray')
   dot.draw()
-  say('Click on the circumference of the circle "'+name+'"',color='purple')
-  circumference = graphics.get_mouse_click()
+  circumference = mouse_ask('Click on the circumference of the circle "'+name+'"')
   dot.undraw() # don't need dot anymore
-  graphics.toggle_tracking()
   # find the radius
   x_difference = center.get_x() - circumference.get_x()
   y_difference = center.get_y() - circumference.get_y()
@@ -1653,11 +1814,9 @@ def place_polygon(name='',fill='',outline='black',width=1):
   # holds all the corners of the polygon
   corners = []
   circles = []
-  graphics.toggle_tracking()
   while True:
     # get the first corner of the polygon
-    say('Click on the a corner of the polygon "'+name+'"',color='orange')
-    first = graphics.get_mouse_click()
+    first = mouse_ask('Click on the a corner of the polygon "'+name+'"',color='orange')
     first_circle = Circle(first,5)
     first_circle.set_fill('orange')
     first_circle.draw()
@@ -1665,8 +1824,7 @@ def place_polygon(name='',fill='',outline='black',width=1):
     circles.append(first_circle)
     # get more corners of the polygon
     while True:
-      say('Click on another corner of the polygon "'+name+'"',color='darkgray')
-      another = graphics.get_mouse_click()
+      another = mouse_ask('Click on another corner of the polygon "'+name+'"',color='#444444')
       # find if the new point is near the first one
       x_difference = first.get_x() - another.get_x()
       y_difference = first.get_y() - another.get_y()
@@ -1675,7 +1833,7 @@ def place_polygon(name='',fill='',outline='black',width=1):
         break
       corners.append(another)
       another_circle = Circle(another,2)
-      another_circle.set_fill('darkgray')
+      another_circle.set_fill('#444444')
       another_circle.draw()
       circles.append(another_circle)
     # clear the points
@@ -1684,7 +1842,6 @@ def place_polygon(name='',fill='',outline='black',width=1):
     if len(corners) < 3:
       say('You need at least 3 points for a polygon, try again',color='red')
     else: break # finished the points
-  graphics.toggle_tracking()
   # make the polygon
   poly = Polygon(corners)
   poly.set_name(name)
@@ -1699,11 +1856,8 @@ def place_polygon(name='',fill='',outline='black',width=1):
 def place_label(text,name='',fill='',outline='black',font=('times',14)):
   ''' Interactive placement of a label. '''
   name = valid_name(name) # make sure the name of the object is valid
-  # get the center and radius
-  graphics.toggle_tracking()
-  say('Click on the position of the Label "'+name+'"',color='purple')
-  anchor = graphics.get_mouse_click()
-  graphics.toggle_tracking()
+  # get position of upper left corner of label
+  anchor = mouse_ask('Click on the position of the Label "'+name+'"')
   # make the label
   labl = Label(anchor,text)
   labl.set_name(name)
@@ -1717,11 +1871,8 @@ def place_label(text,name='',fill='',outline='black',font=('times',14)):
 def place_entry(width,name='',fill='white',outline='black',font=('times',14)):
   ''' Interactive placement of a label. '''
   name = valid_name(name) # make sure the name of the object is valid
-  # get the center and radius
-  graphics.toggle_tracking()
-  say('Click on the position of the Entry "'+name+'"',color='purple')
-  anchor = graphics.get_mouse_click()
-  graphics.toggle_tracking()
+  # get position of upper left corner of Entry
+  anchor = mouse_ask('Click on the position of the Entry "'+name+'"')
   # make the Entry
   entr = Entry(anchor,width)
   entr.set_name(name)
@@ -1735,13 +1886,25 @@ def place_entry(width,name='',fill='white',outline='black',font=('times',14)):
 def place_button(text,name='',fill='cyan',outline='black',font=('times',14)):
   ''' Interactive placement of a Button. '''
   name = valid_name(name) # make sure the name of the object is valid
-  # get the center and radius
-  graphics.toggle_tracking()
-  say('Click on the position of the Button "'+name+'"',color='purple')
-  anchor = graphics.get_mouse_click()
-  graphics.toggle_tracking()
+  # get position of upper left corner of Button
+  anchor = mouse_ask('Click on the position of the Button "'+name+'"')
   # make the button
   butn = Button(anchor,text)
+  butn.set_name(name)
+  butn.set_fill(fill)
+  butn.set_outline(outline)
+  butn.set_font(font)
+  # initialize and draw the object with the name specified
+  exec(butn.to_exec(),globals())
+    
+''' interactive functions to put down graphics and gui '''
+def place_check(text,name='',fill='#EEEEEE',outline='black',font=('times',14)):
+  ''' Interactive placement of a Check (checkbox). '''
+  name = valid_name(name) # make sure the name of the object is valid
+  # get position of upper left corner of Button
+  anchor = mouse_ask('Click on the position of the Check "'+name+'"')
+  # make the button
+  butn = Check(anchor,text)
   butn.set_name(name)
   butn.set_fill(fill)
   butn.set_outline(outline)
@@ -1753,12 +1916,9 @@ def place_button(text,name='',fill='cyan',outline='black',font=('times',14)):
 def place_list(items,name='',fill='yellow',outline='black',font=('times',14)):
   ''' Interactive placement of a Button. '''
   name = valid_name(name) # make sure the name of the object is valid
-  # get the center and radius
-  graphics.toggle_tracking()
-  say('Click on the position of the List "'+name+'"',color='purple')
-  anchor = graphics.get_mouse_click()
-  graphics.toggle_tracking()
-  # make the button
+  # get position of upper left corner of List
+  anchor = mouse_ask('Click on the position of the List "'+name+'"')
+  # make the List
   lst = List(anchor,items)
   lst.set_name(name)
   lst.set_fill(fill)
