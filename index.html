@@ -1779,6 +1779,16 @@ text-align:center;line-height:normal'><span style='font-family:"Times New Roman"
    style='mso-element:field-end'></span></span><![endif]--></a></span></span><span
    style='mso-fareast-font-family:"Times New Roman";mso-fareast-theme-font:
    minor-fareast;mso-no-proof:yes'><o:p></o:p></span></p>
+ <p class=MsoToc2 style='tab-stops:right dotted 467.5pt'><!--[if supportFields]><span
+ style='mso-element:field-begin'></span><span
+ style='mso-spacerun:yes'> </span>TOC \o &quot;1-3&quot; \h \z \u <span
+ style='mso-element:field-separator'></span><![endif]--><span
+ class=MsoHyperlink><span style='mso-no-proof:yes'><a href="#objects">8. GUI4sher Objects</w:Sdt></p>
+ <p class=MsoToc2 style='tab-stops:right dotted 467.5pt'><!--[if supportFields]><span
+ style='mso-element:field-begin'></span><span
+ style='mso-spacerun:yes'> </span>TOC \o &quot;1-3&quot; \h \z \u <span
+ style='mso-element:field-separator'></span><![endif]--><span
+ class=MsoHyperlink><span style='mso-no-proof:yes'><a href="#methods">9. GUI4sher Object Methods</w:Sdt></p>
    <p class=MsoNormal><!--[if supportFields]><b><span style='mso-no-proof:yes'><span
    style='mso-element:field-end'></span></span></b><![endif]--><o:p>&nbsp;</o:p></p>
   </w:Sdt>
@@ -2449,6 +2459,47 @@ to use <span class=SpellE>make_<span class=GramE>app</span></span><span
 class=GramE>(</span>) have your widgets change the text of Labels and Entries
 rather than communicate with the shell. <o:p></o:p></span></p>
 
+<a name=objects><H2>8. GUI4sher Objects</H2></a>
+<H3>Graphical Objects</H3>
+<ul>
+<li>Point(x,y)</li>
+<li>Rectangle(Point,Point)</li>
+<li>Oval(Point,Point)</li>
+<li>Circle(Point,radius)</li>
+<li>Line(Point,Point)</li>
+<li>Dashed_Line(Point,Point)</li>
+<li>Polygon([Points])</li>
+</ul>
+<H3>GUI4sher Widgets</H3>
+<ul>
+<li>Label(Point,string)</li>
+<li>Button(Point,string)</li>
+<li>Check(Point,string)</li>
+<li>Entry(Point,size)</li>
+<li>List(Point,[strings])</li>
+<li>Text(Point,width,height) <font color='#00FF00'>- to come</font></li>
+<li>Radio(RadioGroup,Point,string) <font color='#00FF00'>- to come</font></li>
+</ul>
+<a name=methods><H2>9. GUI4sher Object Methods</H2></a>
+<ul>
+<H3>Point Methods</H3>
+<li>get_x()  get_y()</li>
+<H3>All GUI4sher (except Point) Methods</H3>
+<li>get_fill(), set_fill(color) - changes background color of everything but lines</li>
+<li>get_outline(), set_outline(color) - changes outline color of graphical objects and text colors of Widgets</li>
+<li>get_width(), set_width(width) - width of outline in graphical objects, numbers of letters wide in GUI4sher Widgets</li>
+<H3>GUI4sher Widget Methods</H3>
+<li>get_font(), set_font(font) - font of widget as tuple (face,size,style)</li>
+<li>get_justify(), set_justify(justify) - justification of text in widget</li>
+<H3>Line Methods</H3>
+<li>get_arrow(),set_arrow(direction) - none,first,last,both arrows on Line and Dashed_Line</li>
+<li>get_dash(), set_dash(tuple) - Only Dashed_Line dash structure (length of dash, length of space)</li>
+<H3>Check Methods</H3>
+<li>get_checked(), set_checked(bool) - True when checked, False otherwise</li>
+<H3>Text Methods</H3>
+<li>get_height(),set_height(height) - Height of box</li>
+</ul>
+
 <w:Sdt SdtDocPart="t" DocPartType="Table of Contents" DocPartUnique="t"
  ID="1736205496">
  <p class=MsoTocHeading>Contents<w:sdtPr></w:sdtPr></p>
@@ -2601,10 +2652,16 @@ rather than communicate with the shell. <o:p></o:p></span></p>
  style='mso-element:field-end'></span></span><![endif]--></a></span></span><span
  style='mso-fareast-font-family:"Times New Roman";mso-fareast-theme-font:minor-fareast;
  mso-no-proof:yes'><o:p></o:p></span></p>
- <p class=MsoNormal><!--[if supportFields]><b><span style='mso-no-proof:yes'><span
- style='mso-element:field-end'></span></span></b><![endif]--><b><span
- style='mso-no-proof:yes'><o:p>&nbsp;</o:p></span></b></p>
-</w:Sdt>
+ <p class=MsoToc2 style='tab-stops:right dotted 467.5pt'><!--[if supportFields]><span
+ style='mso-element:field-begin'></span><span
+ style='mso-spacerun:yes'> </span>TOC \o &quot;1-3&quot; \h \z \u <span
+ style='mso-element:field-separator'></span><![endif]--><span
+ class=MsoHyperlink><span style='mso-no-proof:yes'><a href="#objects">8. GUI4sher Objects</w:Sdt></p>
+ <p class=MsoToc2 style='tab-stops:right dotted 467.5pt'><!--[if supportFields]><span
+ style='mso-element:field-begin'></span><span
+ style='mso-spacerun:yes'> </span>TOC \o &quot;1-3&quot; \h \z \u <span
+ style='mso-element:field-separator'></span><![endif]--><span
+ class=MsoHyperlink><span style='mso-no-proof:yes'><a href="#methods">9. GUI4sher Object Methods</w:Sdt></p>
 
 <p class=MsoNormal><span style='font-size:14.0pt;line-height:105%'><o:p>&nbsp;</o:p></span></p>
 
