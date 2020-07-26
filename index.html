@@ -2234,6 +2234,14 @@ Calibri'><span style='mso-list:Ignore'>-<span style='font:7.0pt "Times New Roman
 style='font-size:14.0pt;line-height:105%'>place_entry</span></span><span
 style='font-size:14.0pt;line-height:105%'>(length) - (for text entry)<o:p></o:p></span></p>
 
+<p class=MsoListParagraphCxSpMiddle style='text-indent:-.25in;mso-list:l5 level1 lfo8'><![if !supportLists]><span
+style='font-size:14.0pt;line-height:105%;mso-ascii-font-family:Calibri;
+mso-fareast-font-family:Calibri;mso-hansi-font-family:Calibri;mso-bidi-font-family:
+Calibri'><span style='mso-list:Ignore'>-<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span></span><![endif]><span dir=LTR></span><span class=SpellE><span
+style='font-size:14.0pt;line-height:105%'>place_text</span></span><span
+style='font-size:14.0pt;line-height:105%'>(length,height) - (for multiline text entry)<o:p></o:p></span></p>
+
 <p class=MsoListParagraphCxSpLast style='text-indent:-.25in;mso-list:l5 level1 lfo8'><![if !supportLists]><span
 style='font-size:14.0pt;line-height:105%;mso-ascii-font-family:Calibri;
 mso-fareast-font-family:Calibri;mso-hansi-font-family:Calibri;mso-bidi-font-family:
@@ -2477,7 +2485,7 @@ rather than communicate with the shell. <o:p></o:p></span></p>
 <li>Check(Point,string)</li>
 <li>Entry(Point,size)</li>
 <li>List(Point,[strings])</li>
-<li>Text(Point,width,height) <font color='#00FF00'>- to come</font></li>
+<li>Text(Point,width,height)</li>
 <li>Radio(RadioGroup,Point,string) <font color='#00FF00'>- to come</font></li>
 </ul>
 <a name=methods><H2>9. GUI4sher Object Methods</H2></a>
@@ -2491,7 +2499,7 @@ rather than communicate with the shell. <o:p></o:p></span></p>
 <li>move(dx,dy) - changes position of object by dx,dy</li>
 <H3>GUI4sher Widget Methods</H3>
 <li>get_font(), set_font(font) - font of widget as tuple (face,size,style)</li>
-<li>get_justify(), set_justify(justify) - justification of text in widget</li>
+<li>get_justify(), set_justify(justify) - justification of text in widget (not for Text widget)</li>
 <H3>Line Methods</H3>
 <li>get_arrow(),set_arrow(direction) - none,first,last,both arrows on Line and Dashed_Line</li>
 <li>get_dash(), set_dash(tuple) - Only Dashed_Line dash structure (length of dash, length of space)</li>

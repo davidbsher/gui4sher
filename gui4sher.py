@@ -961,6 +961,130 @@ class Entry(GraphicsObject):
       return '''
 '''.join(exec_lines)
 
+class Text(GraphicsObject):
+
+    def __init__(self, p, width, height):
+        GraphicsObject.__init__(self)
+        self.anchor = p.clone()
+        #print self.anchor
+        self.width = width
+        self.height = height
+        self.anchor = p.clone()
+        self.set_fill("white")
+        self.set_outline("black")
+        self.set_font(("courier", 12))
+        self.frm = tk.Frame(graphics.master)
+        self.scroll = tk.Scrollbar(self.frm)
+        self.scroll.pack(side=tk.RIGHT, fill=tk.Y)
+        self.box = tk.Text(self.frm,
+                              width=self.width,
+                              height=self.height,
+                              bg = self.get_fill(),
+                              fg = self.get_outline(),
+                              font = self.get_font(),
+                              yscrollcommand=self.scroll.set)
+        self.scroll.config(command=self.box.yview)
+
+    def __repr__(self):
+        return "Entry({}, {})".format(self.anchor, self.width)
+
+    def _draw(self, canvas):
+        p = self.anchor
+        the_box = canvas.create_window(p.x,p.y,window=self.frm,anchor='nw')
+        self.box.pack()
+        self.box.focus_set()
+        return the_box
+
+
+    def get_text(self):
+        return self.box.get("1.0", "end-1c")
+
+    def _move(self, dx, dy):
+        self.anchor.move(dx,dy)
+
+    def get_anchor(self):
+        return self.anchor.clone()
+
+    def clone(self):
+        other = Text(self.anchor, self.width, self.height)
+        other.set_name(self.name)
+        other.set_text(self.get_text())
+        other.fill = self.get_fill()
+        other.outline = self.get_outline()
+        other.font = self.get_font()
+        other.justify = self.get_justify()
+        return other
+
+    def set_text(self, t):
+        self.box.delete("1.0", "end-1c")
+        self.box.insert("1.0",t)
+        save_gui4sher() # update the save file
+        root.update()
+
+    def get_height(self):
+      return self.height
+
+    def set_height(self,height):
+      self.height = height
+      if self.id:
+          self.box.config(height=self.get_height())
+          save_gui4sher() # update the save file
+          root.update()
+
+            
+    def set_font(self,font):
+      self.font = font
+      if self.id:
+          self.box.config(font=self.get_font())
+          save_gui4sher() # update the save file
+          root.update()
+
+    def get_font(self):
+      return self.font
+
+    def set_fill(self, color):
+        """Set interior color to color"""
+        self.fill = color
+        if self.id:
+          self.box.config(bg=self.get_fill())
+          save_gui4sher() # update the save file
+          root.update()
+
+    def set_outline(self, color):
+        """Set outline color to color"""
+        self.outline = color
+        if self.id:
+          self.box.config(fg=self.get_outline())
+          save_gui4sher() # update the save file
+          root.update()
+
+    def set_width(self, width):
+        """Set line weight to width"""
+        self.width = width
+        if self.id:
+          self.box.config(width=self.get_width())
+          save_gui4sher() # update the save file
+          root.update()
+
+    def get_width(self):
+      return self.width
+
+
+    def to_exec(self):
+      debug_print('Creating string to execute for Text')
+      ''' creates commands to create the line '''
+      exec_lines = [ self.name + ' = ' + self.__class__.__name__ +'(Point('+str(self.anchor.x)+','+str(self.anchor.y)+'),'+str(self.width)+','+str(self.height)+')',
+                     self.name + '.set_name(\'' + self.name + '\')',
+                     self.name + '.set_fill(\''+ self.get_fill() + '\')',
+                     self.name + ".set_outline('"+ self.get_outline() + "')",
+                     self.name + ".set_width('"+ str(self.get_width())+ "')",
+                     self.name + ".set_height('"+ str(self.get_height())+ "')",
+                     self.name + ".set_text('"+ self.get_text()+ "')",
+                     self.name + '.set_font(' + str(self.get_font()) + ')',
+                     self.name + '.draw()']
+      return '''
+'''.join(exec_lines)
+
 class Button(GraphicsObject):
 
     def __init__(self, p, text):
@@ -1881,6 +2005,22 @@ def place_entry(width,name='',fill='white',outline='black',font=('times',14)):
   entr.set_font(font)
   # initialize and draw the object with the name specified
   exec(entr.to_exec(),globals())
+
+''' interactive functions to put down graphics and gui '''
+def place_text(width,height,name='',fill='white',outline='black',font=('times',10)):
+  ''' Interactive placement of a label. '''
+  name = valid_name(name) # make sure the name of the object is valid
+  # get position of upper left corner of Entry
+  anchor = mouse_ask('Click on the position of the Text "'+name+'"')
+  # make the Entry
+  box = Text(anchor,width,height)
+  box.set_name(name)
+  box.set_fill(fill)
+  box.set_outline(outline)
+  box.set_font(font)
+  debug_print('Executing text box insert:\n'+box.to_exec())
+  # initialize and draw the object with the name specified
+  exec(box.to_exec(),globals())
     
 ''' interactive functions to put down graphics and gui '''
 def place_button(text,name='',fill='cyan',outline='black',font=('times',14)):
