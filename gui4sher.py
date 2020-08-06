@@ -10,9 +10,8 @@ from math import sqrt
 
 from contextlib import redirect_stdout
 
-# begin shell not in app
 # redirect stderr and stdout to strings
-GUI_DEBUG=False   # can turn on and off debugging by changing this
+GUI_DEBUG=False  # can turn on and off debugging by changing this
 def debug_print(to_print,end=''):
   ''' calls a print statement and puts it into the shell window '''
   global shell
@@ -23,6 +22,7 @@ def debug_print(to_print,end=''):
     shell.mark_set(tk.INSERT, tk.END) # make sure the input cursor is at the end
     shell.cursor = shell.index(tk.INSERT) # save the input position
 
+# begin shell not in app
 say_number = 0    # makes all the tags different
 def say(to_print,color='#884400',font=('serif',12),end='\n'):
   global say_number
@@ -1414,6 +1414,218 @@ class Check(GraphicsObject):
       return '''
 '''.join(exec_lines)
 
+group_names = [] # list of RadioGroup names
+
+class RadioGroup():
+  ''' Defines a group of radio buttons connected to each other so only 1 can be checked at a time. '''
+  def __init__(self,name):
+    self.variable = tk.IntVar() # string vars don't work for radio groups
+    self.variable.set(0)
+    self.new_value = 1;
+    self.name = name
+    objects.append(self)
+    group_names.append(name)
+
+  def get_variable(self):
+    return self.variable
+
+  def increment_new_value(self):
+    ''' Incrementes the new value variable the next radio button in the group will match this '''
+    self.new_value += 1
+    return self.new_value - 1   # value to use for new radio button
+
+  def get_value(self):
+    return self.variable.get()
+
+
+  def get_name(self):
+    return self.name
+
+  def to_exec(self):
+    return self.name+ ' = ' + self.__class__.__name__ +'(\''+self.name+'\')\n' 
+
+class Radio(GraphicsObject):
+
+    def __init__(self, p, text, group, name):
+        debug_print('Making radio button: '+name,end='\n')
+        self.group = group
+        GraphicsObject.__init__(self,fill='#AAFFAA')
+        self.anchor = p.clone()
+        self.text = text
+        self.original_name = name  # needed to reinitialize or copy
+        self.set_name(name)
+        self.set_font(("sanserif", 14,'bold'))
+        self.set_justify('center')
+        self.frm = tk.Frame(graphics.master)
+        self.set_width(len(text))
+        # create a new clicks file if one doesn't exist
+# not saved
+        if not os.path.isfile(clicks_file): create_clicks()
+        # add a click command if one exists
+        try: exec('self.command = '+self.get_group().get_name()+'_click')
+        except (NameError, AttributeError): self.command = None # otherwise no command
+
+        if self.command == None:
+          self.button = tk.Radiobutton(self.frm,
+                              width = len(text),
+                              text=text,
+                              indicatoron = 0,
+                              bg = self.get_fill(),
+                              fg = self.get_outline(),
+                              font = self.get_font(),
+                              justify = self.get_justify(),
+                              variable= self.get_group().get_variable(),
+                              value=self.get_group().increment_new_value())
+        else:
+          self.button = tk.Radiobutton(self.frm,
+                              width = len(text),
+                              text=text,
+                              indicatoron = 0,
+                              bg = self.get_fill(),
+                              fg = self.get_outline(),
+                              font = self.get_font(),
+                              justify = self.get_justify(),
+                              variable= self.get_group().get_variable(),
+                              value=self.get_group().increment_new_value(),
+                              command = self.handle_click)
+        self.button.deselect() # button should start out not selected
+          
+
+    def __repr__(self):
+        return "Button({}, {})".format(self.anchor, self.text)
+
+    def _draw(self, canvas):
+        p = self.anchor
+        the_button = canvas.create_window(p.x,p.y,window=self.frm,anchor='nw')
+        self.button.pack()
+        return the_button
+
+    def handle_click(self):
+      ''' If it exists call the return function from the clicks file. '''
+      # do a return command if the return function exists
+      debug_print('Click caused: '+self.get_group().get_name()+'_click('+self.get_name()+')',end='\n')
+      try: exec(self.get_group().get_name()+'_click('+self.get_name()+')')
+      except (NameError, AttributeError): return None # otherwise no return behavior
+      except Error as e: say(e,color='red',font=('Consolas', 12, 'bold')) # output error
+      except Exception as exp: say(exp,color='red',font=('Consolas', 12, 'bold')) # output Exception
+
+    def get_group(self):
+      ''' Which RadioGroup does it belong to. '''
+      return self.group
+
+    def select(self):
+      ''' Clicks the Radio. '''
+      self.button.select()
+      if self.id:
+        save_gui4sher() # update the save file
+        root.update()
+
+    def deselect(self):
+      ''' Unclicks the Radio. '''
+      self.button.deselect()
+      if self.id:
+        save_gui4sher() # update the save file
+        root.update()
+
+    def set_name(self, name):
+        """Set name of button to name"""
+        self.original_name = name
+        self.name = self.get_group().get_name()+'_'+name
+        # add a click command if one exists
+        try: exec('self.command = '+self.get_name()+'_click')
+        except (NameError, AttributeError): self.command = None # otherwise no command
+        if self.command != None:
+          self.button.config(command=self.command)
+        if self.id:
+            save_gui4sher() # update the save file
+            root.update()
+
+
+    def set_text(self,text):
+      self.text = text
+      self.button.config(text=self.get_text())
+      self.set_width(len(self.get_text()))
+      if self.id:
+          save_gui4sher() # update the save file
+          root.update()
+
+    def get_text(self):
+        return self.text
+
+    def _move(self, dx, dy):
+        self.anchor.move(dx,dy)
+
+    def get_anchor(self):
+        return self.anchor.clone()
+
+    def clone(self):
+        other = Button(self.anchor, self.get_text())
+        other.config = self.config.copy()
+        other.set_name(self.name)
+        other.text = self.text
+        return other
+
+    def set_justify(self,justify):
+      self.justify = justify
+      if self.id:
+          self.button.config(justify=self.get_justify())
+          save_gui4sher() # update the save file
+          root.update()
+
+    def get_justify(self):
+      return self.justify
+
+    def set_font(self,font):
+      self.font = font
+      if self.id:
+          self.button.config(font=self.get_font())
+          save_gui4sher() # update the save file
+          root.update()
+
+    def get_font(self):
+      return self.font
+
+    def set_fill(self, color):
+        """Set interior color to color"""
+        self.fill = color
+        if self.id:
+          self.button.config(bg=self.get_fill())
+          save_gui4sher() # update the save file
+          root.update()
+
+    def set_outline(self, color):
+        """Set outline color to color"""
+        self.outline = color
+        if self.id:
+          self.button.config(fg=self.get_outline())
+          save_gui4sher() # update the save file
+          root.update()
+
+    def set_width(self, width):
+        """Set line weight to width"""
+        self.width = width
+        if self.id:
+          self.button.config(width=self.get_width())
+          save_gui4sher() # update the save file
+          root.update()
+
+
+
+    def to_exec(self):
+      ''' creates commands to create the line '''
+      exec_lines = [ self.name+ ' = ' + self.__class__.__name__ +'(Point('+str(self.anchor.x)+','+str(self.anchor.y)+'),"'+str(self.get_text())+'",'+self.get_group().get_name()+',"'+self.original_name+'")',
+                     self.name + '.name = \'' + self.name + '\'',
+                     self.name + '.set_fill(\''+ self.get_fill() + '\')',
+                     self.name + ".set_outline('"+ self.get_outline() + "')",
+                     self.name + ".set_width('"+ str(self.get_width())+ "')",
+                     self.name + ".set_text('"+ self.get_text()+ "')",
+                     self.name + '.set_font(' + str(self.get_font()) + ')',
+                     self.name + '.set_justify(\''+self.get_justify() + '\')',
+                     self.name + '.draw()'
+                     ]
+      return '''
+'''.join(exec_lines)
+
 class List(GraphicsObject):
 
     def __init__(self, p, items):
@@ -1804,11 +2016,11 @@ get_save()
 
 
 ''' interactive functions to put down graphics and gui '''
-def valid_name(name):
+def valid_name(name,thing,prefix=''):
   ''' Interactively dialogs with the user until a valid name is acquired and then returns it. '''
   if name == '':
-    name = ask('Name of shape or GUI')
-  while not name.isidentifier() or iskeyword(name) or name in names():
+    name = ask('Name of '+thing)
+  while not (prefix+name).isidentifier() or iskeyword(prefix+name) or prefix+name in names():
     if not name.isidentifier():
       name = ask(name+' is not a valid python variable name, Enter a new name')
     elif iskeyword(name):
@@ -1829,7 +2041,7 @@ def mouse_ask(to_print,color='darkgreen',font=('serif',12),end=': '):
 
 def place_rectangle(name='',fill='',outline='black',width=1):
   ''' Interactive placement of a rectangle. '''
-  name = valid_name(name) # make sure the name of the object is valid
+  name = valid_name(name,'Rectangle') # make sure the name of the object is valid
   # get the corners of the rectangle
   corner = mouse_ask('Click on a corner of rectangle "'+name+'"')
   dot = Circle(corner,3) # dot to put on screen
@@ -1849,7 +2061,7 @@ def place_rectangle(name='',fill='',outline='black',width=1):
 ''' interactive functions to put down graphics and gui '''
 def place_oval(name='',fill='',outline='black',width=1):
   ''' Interactive placement of a oval. '''
-  name = valid_name(name) # make sure the name of the object is valid
+  name = valid_name(name,'Oval') # make sure the name of the object is valid
   # get the corners of the rectangle enclosing
   corner = mouse_ask('Click on a corner of rectangle that encloses the oval "'+name+'"')
   dot = Circle(corner,3) # dot to put on screen
@@ -1869,7 +2081,7 @@ def place_oval(name='',fill='',outline='black',width=1):
 ''' interactive functions to put down graphics and gui '''
 def place_line(name='',fill='',outline='black',width=1):
   ''' Interactive placement of a line. '''
-  name = valid_name(name) # make sure the name of the object is valid
+  name = valid_name(name,'Line') # make sure the name of the object is valid
   # get the corners of the rectangle enclosing
   corner = mouse_ask('Click on an endpoint of "'+name+'"')
   dot = Circle(corner,3) # dot to put on screen
@@ -1889,7 +2101,7 @@ def place_line(name='',fill='',outline='black',width=1):
 ''' interactive functions to put down graphics and gui '''
 def place_dashed_line(name='',fill='',outline='black',width=1,dash=(5,5)):
   ''' Interactive placement of a line. '''
-  name = valid_name(name) # make sure the name of the object is valid
+  name = valid_name(name,'Dashed_Line') # make sure the name of the object is valid
   # get the corners of the rectangle enclosing
   corner = mouse_ask('Click on an endpoint of "'+name+'"')
   dot = Circle(corner,3) # dot to put on screen
@@ -1910,7 +2122,7 @@ def place_dashed_line(name='',fill='',outline='black',width=1,dash=(5,5)):
 ''' interactive functions to put down graphics and gui '''
 def place_circle(name='',fill='',outline='black',width=1):
   ''' Interactive placement of a circle. '''
-  name = valid_name(name) # make sure the name of the object is valid
+  name = valid_name(name,'Circle') # make sure the name of the object is valid
   # get the center and radius
   center = mouse_ask('Click on the center of the circle "'+name+'"'+name+'"')
   dot = Circle(center,3) # dot to put on screen
@@ -1934,7 +2146,7 @@ def place_circle(name='',fill='',outline='black',width=1):
 ''' interactive functions to put down graphics and gui '''
 def place_polygon(name='',fill='',outline='black',width=1):
   ''' Interactive placement of a circle. '''
-  name = valid_name(name) # make sure the name of the object is valid
+  name = valid_name(name,'Polygon') # make sure the name of the object is valid
   # holds all the corners of the polygon
   corners = []
   circles = []
@@ -1979,7 +2191,7 @@ def place_polygon(name='',fill='',outline='black',width=1):
 ''' interactive functions to put down graphics and gui '''
 def place_label(text,name='',fill='',outline='black',font=('times',14)):
   ''' Interactive placement of a label. '''
-  name = valid_name(name) # make sure the name of the object is valid
+  name = valid_name(name,'Label') # make sure the name of the object is valid
   # get position of upper left corner of label
   anchor = mouse_ask('Click on the position of the Label "'+name+'"')
   # make the label
@@ -1994,7 +2206,7 @@ def place_label(text,name='',fill='',outline='black',font=('times',14)):
 ''' interactive functions to put down graphics and gui '''
 def place_entry(width,name='',fill='white',outline='black',font=('times',14)):
   ''' Interactive placement of a label. '''
-  name = valid_name(name) # make sure the name of the object is valid
+  name = valid_name(name,'Entry') # make sure the name of the object is valid
   # get position of upper left corner of Entry
   anchor = mouse_ask('Click on the position of the Entry "'+name+'"')
   # make the Entry
@@ -2009,7 +2221,7 @@ def place_entry(width,name='',fill='white',outline='black',font=('times',14)):
 ''' interactive functions to put down graphics and gui '''
 def place_text(width,height,name='',fill='white',outline='black',font=('times',10)):
   ''' Interactive placement of a label. '''
-  name = valid_name(name) # make sure the name of the object is valid
+  name = valid_name(name,'Text') # make sure the name of the object is valid
   # get position of upper left corner of Entry
   anchor = mouse_ask('Click on the position of the Text "'+name+'"')
   # make the Entry
@@ -2025,7 +2237,7 @@ def place_text(width,height,name='',fill='white',outline='black',font=('times',1
 ''' interactive functions to put down graphics and gui '''
 def place_button(text,name='',fill='cyan',outline='black',font=('times',14)):
   ''' Interactive placement of a Button. '''
-  name = valid_name(name) # make sure the name of the object is valid
+  name = valid_name(name,'Button') # make sure the name of the object is valid
   # get position of upper left corner of Button
   anchor = mouse_ask('Click on the position of the Button "'+name+'"')
   # make the button
@@ -2040,7 +2252,7 @@ def place_button(text,name='',fill='cyan',outline='black',font=('times',14)):
 ''' interactive functions to put down graphics and gui '''
 def place_check(text,name='',fill='#EEEEEE',outline='black',font=('times',14)):
   ''' Interactive placement of a Check (checkbox). '''
-  name = valid_name(name) # make sure the name of the object is valid
+  name = valid_name(name,'Check') # make sure the name of the object is valid
   # get position of upper left corner of Button
   anchor = mouse_ask('Click on the position of the Check "'+name+'"')
   # make the button
@@ -2055,7 +2267,7 @@ def place_check(text,name='',fill='#EEEEEE',outline='black',font=('times',14)):
 ''' interactive functions to put down graphics and gui '''
 def place_list(items,name='',fill='yellow',outline='black',font=('times',14)):
   ''' Interactive placement of a Button. '''
-  name = valid_name(name) # make sure the name of the object is valid
+  name = valid_name(name,'List') # make sure the name of the object is valid
   # get position of upper left corner of List
   anchor = mouse_ask('Click on the position of the List "'+name+'"')
   # make the List
@@ -2067,6 +2279,29 @@ def place_list(items,name='',fill='yellow',outline='black',font=('times',14)):
   # initialize and draw the object with the name specified
   exec(lst.to_exec(),globals())
     
+def place_radio(text,group='',name='',fill='light green',outline='dark blue',font=('Courier',14)):
+  global objects
+  ''' Interactive placement of a Radio. '''
+  if not group in group_names: # if you don't use an existing group
+    group = valid_name(group,'RadioGroup') # make sure the name of the RadioGroup is valid
+    group_name = group
+    the_group = RadioGroup(group) # create the new RadioGroup
+    exec(the_group.to_exec(),globals())
+  else:
+    # find the group specified by the user
+    for thing in objects:
+      if thing.get_name() == group:
+        the_group = thing
+  name = valid_name(name,'Radio',prefix=group) # make sure the name of the object is valid
+  # get position of upper left corner of Radio
+  anchor = mouse_ask('Click on the position of the Radio "'+name+'"')
+  # make the List
+  rad = Radio(anchor,text,the_group,name)
+  rad.set_fill(fill)
+  rad.set_outline(outline)
+  rad.set_font(font)
+  # initialize and draw the object with the name specified
+  exec(rad.to_exec(),globals())
       
 
 # end shell not in app
