@@ -1,11 +1,4 @@
-# not saved
-''' code here manages copyright notice '''
-# not saved
-authors = "David B. Sher"
-# not saved
-thanks = "John Zelle"
-# not saved
-year = "2020"
+#this version of gui4sher.py is for use with repl.it
 import tkinter as tk
 import sys, io, os
 import subprocess as subp
@@ -18,7 +11,6 @@ from math import sqrt
 
 from contextlib import redirect_stdout
 
-# begin shell not in app
 # redirect stderr and stdout to strings
 GUI_DEBUG=False  # can turn on and off debugging by changing this
 def debug_print(to_print,end=''):
@@ -31,6 +23,7 @@ def debug_print(to_print,end=''):
     shell.mark_set(tk.INSERT, tk.END) # make sure the input cursor is at the end
     shell.cursor = shell.index(tk.INSERT) # save the input position
 
+# begin shell not in app
 say_number = 0    # makes all the tags different
 def say(to_print,color='#884400',font=('serif',12),end='\n'):
   global say_number
@@ -146,6 +139,31 @@ class Shell(tk.Text):
         self.insert_text(stdout)
       except Exception as e:
         self.insert_error(stderr)
+
+class Shell_Insert(tk.Button):
+  ''' Inserts a string into the shell when clicked. '''
+  def __init__(self, parent, to_insert):
+    super(Shell_Insert, self).__init__(parent,
+                              text=to_insert,
+                              bg = "yellow",
+                              fg = "dark blue",
+                              font = ("sanserif",14),
+                              command = self.handle_click)
+    self.to_insert = to_insert
+
+  def handle_click(self):
+    global shell
+    shell.insert(tk.END,self.to_insert)
+
+def shell_row(parent, row, insert_list): # insert_list is a list of strings to insert
+    ''' Inserts a row of Shell_Insert's. '''
+    col = 0 # position of inserter
+    # put all the buttons for all the insert strings in 
+    for inserter in insert_list:
+      butt = Shell_Insert(parent,inserter)
+      butt.grid(row=row,column=col)
+      col+=1 # next column
+   
 # end shell not in app
 ''' this sets up the window with
   * header (with project file)
@@ -170,12 +188,21 @@ row_number+=1  # next row
 top.columnconfigure(0, weight=1)
 top.rowconfigure(0, weight=1)
 
+# begin shell not in app
 # bottom frame will hold shell
 bottom = tk.Frame(root)
 bottom.grid(row=row_number)
 row_number+=1  # next row
 bottom.columnconfigure(0, weight=1)
 bottom.rowconfigure(0, weight=1)
+
+# keys frame will hold keys that don't work in repl.it and some short cut keys
+keys = tk.Frame(root)
+keys.grid(row=row_number)
+row_number+=1  # next row
+keys.columnconfigure(0, weight=1)
+keys.rowconfigure(0, weight=1)
+# end shell not in app
 
 # copy_frame will hold copyright information
 copy_frame = tk.Frame(root,height=16)
@@ -192,7 +219,7 @@ shell_scroll.pack(side=tk.RIGHT, fill=tk.Y)
 shell_hscroll = tk.Scrollbar(bottom, orient=tk.HORIZONTAL)
 shell_hscroll.pack(side=tk.BOTTOM, fill=tk.X)
 ''' put shell window into bottom frame '''
-shell = Shell(bottom,wrap=tk.NONE, yscrollcommand=shell_scroll.set, xscrollcommand=shell_hscroll.set, width=80, height=16,  font=('Consolas', 12))
+shell = Shell(bottom,wrap=tk.NONE, yscrollcommand=shell_scroll.set, xscrollcommand=shell_hscroll.set, width=80, height=12,  font=('Consolas', 12))
 shell.pack(fill=tk.BOTH, expand = tk.YES, side="left")
 shell.focus_set()
 shell.columnconfigure(0, weight=1)
@@ -200,6 +227,9 @@ shell.rowconfigure(0, weight=1)
 # Configure the scrollbars
 shell_scroll.config(command=shell.yview)
 shell_hscroll.config(command=shell.xview)
+
+''' create rows of keys '''
+shell_row(keys,0,("~","!","#","$","%","^","&","*","(",")","_","+","{","}","|",":","\"","<",">","?","print(","place_"))
 
 # end shell not in app
 
@@ -256,6 +286,14 @@ class MouseCanvas(tk.Canvas):
 graphics = MouseCanvas()
 graphics.pack(fill=tk.BOTH, expand = 1)
 
+# not saved
+''' code here manages copyright notice '''
+# not saved
+authors = 'David B. Sher'
+# not saved
+thanks = 'John Zelle'
+# not saved
+year = '2020'
 
 copyright_string = tk.StringVar()
 copyright_string.set('Copyright {} {} with thanks to {}'.format(authors,year,thanks))
@@ -843,6 +881,7 @@ class Entry(GraphicsObject):
         self.set_justify('left')
         self.frm = tk.Frame(graphics.master)
         # create a new clicks file if one doesn't exist
+# not saved
         if not os.path.isfile(clicks_file): create_clicks()
         self.entry = tk.Entry(self.frm,
                               width=self.width,
@@ -1099,6 +1138,7 @@ class Button(GraphicsObject):
         self.frm = tk.Frame(graphics.master)
         self.set_width(len(text))
         # create a new clicks file if one doesn't exist
+# not saved
         if not os.path.isfile(clicks_file): create_clicks()
         # add a click command if one exists
         try: exec('self.command = '+self.get_name()+'_click')
@@ -1255,6 +1295,7 @@ class Check(GraphicsObject):
         self.checked = tk.BooleanVar()
         self.set_checked(False)
         # create a new clicks file if one doesn't exist
+# not saved
         if not os.path.isfile(clicks_file): create_clicks()
         # add a click command if one exists
         try: exec('self.command = '+self.get_name()+'_click')
@@ -1456,6 +1497,7 @@ class Radio(GraphicsObject):
         self.frm = tk.Frame(graphics.master)
         self.set_width(len(text))
         # create a new clicks file if one doesn't exist
+# not saved
         if not os.path.isfile(clicks_file): create_clicks()
         # add a click command if one exists
         try: exec('self.command = '+self.get_group().get_name()+'_click')
@@ -1642,6 +1684,7 @@ class List(GraphicsObject):
         self.scroll = tk.Scrollbar(self.frm)
         self.scroll.pack(side=tk.RIGHT, fill=tk.Y)
         # create a new clicks file if one doesn't exist
+# not saved
         if not os.path.isfile(clicks_file): create_clicks()
         self.list = tk.Listbox(self.frm,
                               bg = self.get_fill(),
@@ -2004,8 +2047,10 @@ def base_name(name):
   else: return name[:-3]
 
 # basic gui4sher source
-read_file = getcwd()+'/gui4sher.py'
+read_file = getcwd()+'/main.py'
 
+# not saved
+get_save()
 
 
 ''' interactive functions to put down graphics and gui '''
@@ -2298,17 +2343,10 @@ def place_radio(text,group='',name='',fill='light green',outline='dark blue',fon
       
 
 # end shell not in app
+# not saved
+root.mainloop()
 
   
 
 
 
-# not saved
-save_file = '.py'
-# not saved
-clicks_file = '_clicks.py'
-# not saved
-change_title('Project in .py put button click functions in _clicks.py')
-''' All the objects in the graphics are below '''
-# not saved
-root.mainloop()
