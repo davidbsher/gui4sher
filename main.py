@@ -185,31 +185,23 @@ row_number = 0
 top = tk.Frame(root)
 top.grid(row=row_number)
 row_number+=1  # next row
-top.columnconfigure(0, weight=1)
-top.rowconfigure(0, weight=1)
 
 # begin shell not in app
 # bottom frame will hold shell
 bottom = tk.Frame(root)
 bottom.grid(row=row_number)
 row_number+=1  # next row
-bottom.columnconfigure(0, weight=1)
-bottom.rowconfigure(0, weight=1)
 
 # keys frame will hold keys that don't work in repl.it and some short cut keys
 keys = tk.Frame(root)
 keys.grid(row=row_number)
 row_number+=1  # next row
-keys.columnconfigure(0, weight=1)
-keys.rowconfigure(0, weight=1)
 # end shell not in app
 
 # copy_frame will hold copyright information
 copy_frame = tk.Frame(root,height=16)
 copy_frame.grid(row=row_number)
 row_number+=1  # next row
-copy_frame.columnconfigure(0, weight=1)
-copy_frame.rowconfigure(0, weight=1)
 
 # begin shell not in app
 ''' create scrollbars for shell '''
@@ -229,7 +221,7 @@ shell_scroll.config(command=shell.yview)
 shell_hscroll.config(command=shell.xview)
 
 ''' create rows of keys '''
-shell_row(keys,0,("~","!","#","$","%","^","&","*","(",")","_","+","{","}","|",":","\"","<",">","?","print(","place_"))
+shell_row(keys,0,("~","!","#","$","%","^","&","*","(",")","_","+","{","}","|",":","\"","<",">","?"))
 
 # end shell not in app
 
@@ -2000,7 +1992,7 @@ def make_app():
   # run the app
   debug_print('''python "{}"
 '''.format(app_file))
-  system('python "{}"'.format(app_file))
+  system('echo import {} | python3'.format(base_name(app_file)))
 
 
 def get_save():
@@ -2018,17 +2010,15 @@ def get_save():
   save_gui4sher()
   shell.focus_set()
 
-def edit_in_idle():
-  ''' edits the save file in idle '''
-  global save_file
-  root.destroy() #close the editing screen when changing things
-  system('idle -e "{}"'.format(save_file))
 
 def edit_clicks():
-  ''' edits the clicks file in idle '''
+  ''' edits the clicks file in repl.it '''
   global clicks_file
+  # wait until user has stopped editing clicks file
+  while ask("Have you finished editing: "+clicks_file+"?").lower()[0] != 'y':
+    pass 
   root.destroy() #close the editing screen when changing things
-  system('idle -e "{}"'.format(clicks_file))
+  system('echo import {} | python3'.format(base_name(save_file)))
 
 def create_clicks():
   ''' creates a new clicks file '''

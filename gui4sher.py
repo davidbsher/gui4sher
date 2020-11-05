@@ -1894,6 +1894,9 @@ def make_app():
   global read_file
   global save_file
   global clicks_file
+  # check that the clicks_file exists
+  clicks_exists =  os.path.isfile(clicks_file)
+    
   root.update()  # needed to manage focus for some unknown reason
   app_file = tk.filedialog.asksaveasfilename(title='Select or enter name for app',filetypes = (("python files","*.py"),("all files","*.*")))
   if not app_file.endswith('.py'):  # add .py extension to files without any extension
@@ -1903,18 +1906,19 @@ def make_app():
 '''.format(app_file))
   # open the basic gui4sher
   reader = open(read_file,mode='r')
-  # open the file containing the button click functions
-  clicker = open(clicks_file,mode='r')
   # open the file to save to 
   saver = open(app_file,mode='w+')
-  # copy the button click functions
-  for line in clicker:
-      if 0 == line.find(NO_SAVE):
-        # don't write this line or the next
-        clicker.readline()
-      else:
-        print(line.replace(base_name(save_file)+'.',''),end='',file=saver,flush=True)
-        debug_print('''Copied {}
+  # open the file containing the button click functions
+  if clicks_exists:
+    clicker = open(clicks_file,mode='r')
+    # copy the button click functions
+    for line in clicker:
+        if 0 == line.find(NO_SAVE):
+          # don't write this line or the next
+          clicker.readline()
+        else:
+          print(line.replace(base_name(save_file)+'.',''),end='',file=saver,flush=True)
+          debug_print('''Copied {}
 '''.format(line))
 
   # put in copyright line info
@@ -1956,7 +1960,7 @@ def make_app():
   # finish files
   reader.close()
   saver.close()
-  clicker.close()
+  if clicks_exists: clicker.close()
   debug_print('''Done make_app
 ''')
   # run the app
