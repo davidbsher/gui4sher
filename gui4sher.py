@@ -11,7 +11,7 @@ from math import sqrt
 from contextlib import redirect_stdout
 
 # redirect stderr and stdout to strings
-GUI_DEBUG=False  # can turn on and off debugging by changing this
+GUI_DEBUG=True  # can turn on and off debugging by changing this
 def debug_print(to_print,end=''):
   ''' calls a print statement and puts it into the shell window '''
   global shell
@@ -1867,7 +1867,7 @@ def save_gui4sher():
     else:
       print(line,end='',file=saver,flush=True)
   # put in the save file name
-  print(NO_SAVE+"\nsave_file = '"+saver.name+"'",file=saver,flush=True)
+  print(NO_SAVE+"\nsave_file = __file__",file=saver,flush=True)
   print(NO_SAVE+"\nclicks_file = '"+clicks_file+"'",file=saver,flush=True)
   # set up title of project
   print(NO_SAVE+'\nchange_title(\'Project in '+save_file+' put button click functions in '+clicks_file+'\')',file=saver,flush = True)
@@ -2128,7 +2128,7 @@ def place_circle(name='',fill='',outline='black',width=1):
   ''' Interactive placement of a circle. '''
   name = valid_name(name,'Circle') # make sure the name of the object is valid
   # get the center and radius
-  center = mouse_ask('Click on the center of the circle "'+name+'"'+name+'"')
+  center = mouse_ask('Click on the center of the circle "'+name+'"')
   dot = Circle(center,3) # dot to put on screen
   dot.set_fill('darkgray')
   dot.draw()
