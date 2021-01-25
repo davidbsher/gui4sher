@@ -12,7 +12,7 @@ from math import sqrt
 from contextlib import redirect_stdout
 
 # redirect stderr and stdout to strings
-GUI_DEBUG=True  # can turn on and off debugging by changing this
+GUI_DEBUG=False  # can turn on and off debugging by changing this
 def debug_print(to_print,end=''):
   ''' calls a print statement and puts it into the shell window '''
   global shell
@@ -951,6 +951,24 @@ class Entry(GraphicsObject):
         save_gui4sher() # update the save file
         root.update()
 
+    def set_name(self, name):
+        """Set name of enty to name"""
+        old_name = self.name
+        self.name = name
+        # add a click command if one exists
+        try: exec('self.command = '+self.get_name()+'_return')
+        except (NameError, AttributeError): self.command = None # otherwise no command
+        if self.command != None:
+          self.button.config(command=self.command)
+        if self.id:
+            save_gui4sher() # update the save file
+            root.update()
+        # translate old name to new name in clicks_window
+        clicks = clicks_window.get('1.0','end')
+        clicks = re.sub(r'(\W)'+old_name+r'(\W)',r'\1'+name+r'\2',clicks) # change the old name to the new name in clicks
+        clicks = re.sub(r'(\W)'+old_name+r'_return(\W)',r'\1'+name+r'_return\2',clicks) # change the old name to the new name in clicks
+        clicks_window.delete('1.0','end')
+        clicks_window.insert('end',clicks)
             
 
             
@@ -1366,6 +1384,7 @@ class Check(GraphicsObject):
 
     def set_name(self, name):
         """Set name of button to name"""
+        old_name = self.name
         self.name = name
         # add a click command if one exists
         try: exec('self.command = '+self.get_name()+'_click')
@@ -1375,6 +1394,12 @@ class Check(GraphicsObject):
         if self.id:
             save_gui4sher() # update the save file
             root.update()
+        # translate old name to new name in clicks_window
+        clicks = clicks_window.get('1.0','end')
+        clicks = re.sub(r'(\W)'+old_name+r'(\W)',r'\1'+name+r'\2',clicks) # change the old name to the new name in clicks
+        clicks = re.sub(r'(\W)'+old_name+r'_click(\W)',r'\1'+name+r'_click\2',clicks) # change the old name to the new name in clicks
+        clicks_window.delete('1.0','end')
+        clicks_window.insert('end',clicks)
 
 
     def set_text(self,text):
@@ -1568,8 +1593,8 @@ class Radio(GraphicsObject):
 
     def set_name(self, name):
         """Set name of button to name"""
-        self.original_name = name
-        self.name = self.get_group().get_name()+'_'+name
+        old_name = self.name
+        self.name = name
         # add a click command if one exists
         try: exec('self.command = '+self.get_name()+'_click')
         except (NameError, AttributeError): self.command = None # otherwise no command
@@ -1578,6 +1603,12 @@ class Radio(GraphicsObject):
         if self.id:
             save_gui4sher() # update the save file
             root.update()
+        # translate old name to new name in clicks_window
+        clicks = clicks_window.get('1.0','end')
+        clicks = re.sub(r'(\W)'+old_name+r'(\W)',r'\1'+name+r'\2',clicks) # change the old name to the new name in clicks
+        clicks = re.sub(r'(\W)'+old_name+r'_click(\W)',r'\1'+name+r'_click\2',clicks) # change the old name to the new name in clicks
+        clicks_window.delete('1.0','end')
+        clicks_window.insert('end',clicks)
 
 
     def set_text(self,text):
@@ -1841,6 +1872,25 @@ class List(GraphicsObject):
     def get_width(self):
       return self.width
 
+    def set_name(self, name):
+        """Set name of select to name"""
+        old_name = self.name
+        self.name = name
+        # add a click command if one exists
+        try: exec('self.command = '+self.get_name()+'_select')
+        except (NameError, AttributeError): self.command = None # otherwise no command
+        if self.command != None:
+          self.button.config(command=self.command)
+        if self.id:
+            save_gui4sher() # update the save file
+            root.update()
+        # translate old name to new name in clicks_window
+        clicks = clicks_window.get('1.0','end')
+        clicks = re.sub(r'(\W)'+old_name+r'(\W)',r'\1'+name+r'\2',clicks) # change the old name to the new name in clicks
+        clicks = re.sub(r'(\W)'+old_name+r'_select(\W)',r'\1'+name+r'_click\2',clicks) # change the old name to the new name in clicks
+        clicks_window.delete('1.0','end')
+        clicks_window.insert('end',clicks)
+
 
     def to_exec(self):
       debug_print('Creating string to execute for Entry')
@@ -1909,9 +1959,13 @@ def save_gui4sher():
   # put in the save file name
   print(NO_SAVE+"\nsave_file = __file__",file=saver,flush=True)
   # set up title of project
-  print(NO_SAVE+'\nchange_title(\'Project in '+save_file+'\')',file=saver,flush = True)
+  save_file = base_name(save_file)
+  debug_print('Got save file',end='\n')
+  if not save_file.endswith('.py'):  # add .py extension to files without a .py extension
+    save_file += '.py'
+  print(NO_SAVE+'\nchange_title(\'Project in '+save_file+'\')\n',file=saver,flush = True)
   # put in comment establishing objects
-  print("''' All the objects in the graphics are below '''",file=saver,flush=True)
+  print("''' All the objects in the graphics are below '''\n",file=saver,flush=True)
   # put commands to put every object drawn on graphics window into saver
   for obj in objects:
     print(obj.to_exec(),file=saver,flush=True)
@@ -1919,6 +1973,10 @@ def save_gui4sher():
     debug_print(obj.to_exec())
     debug_print('''
 ''')
+  debug_print('clicks_window.insert(\'end\','+repr(clicks_window.get('1.0','end'))+')\n')
+  print(NO_SAVE+'\nclicks_window.insert(\'end\','+repr(clicks_window.get('1.0','end'))+')\n',file=saver,flush=True)
+  debug_print('exec(clicks_window.get(\'1.0\',\'end\'))\n')
+  print(NO_SAVE+'\nexec(clicks_window.get(\'1.0\',\'end\'))\n',file=saver,flush=True)
   # needed to make gui work right
   print(NO_SAVE+"\nroot.mainloop()",file=saver,flush=True)
   debug_print('Done Saving')
