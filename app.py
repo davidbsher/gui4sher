@@ -191,7 +191,7 @@ class GraphicsObject:
         self.id = None
 
         # config is the dictionary of configuration options for the widget.
-        self.set_name('object'+str(object_number))
+        self.name = 'object'+str(object_number)
         object_number+=1 # each object starts with a unique name
         self.set_fill(fill)
         self.set_outline(outline)
@@ -722,11 +722,6 @@ class Entry(GraphicsObject):
                               fg = self.get_outline(),
                               font = self.get_font())
         self.entry.bind("<Return>",self.handle_return)
-        # put an empty definition for the return handler into the clicks window if no definition is already in the clicks window
-        clicks = clicks_window.get('1.0','end')
-        click_def_pattern = re.compile('def\s*'+self.get_name()+'_return')
-        if click_def_pattern.search(clicks) == None:
-          clicks_window.insert('end','\ndef '+self.get_name()+'_return:\n\t\n')
 
     def __repr__(self):
         return "Entry({}, {})".format(self.anchor, self.width)
@@ -741,7 +736,7 @@ class Entry(GraphicsObject):
     def handle_return(self,event):
       ''' if it exists call the return function from the clicks file '''
       # do a return command if the return function exists
-      try: exec(self.get_name()+'_return()')
+      try: exec(self.get_name()+'_return()',globals())
       except (NameError, AttributeError): return None # otherwise no return behavior
       except Error as e: say(e,color='red',font=('Consolas', 12, 'bold')) # output error
       except Exception as exp: say(exp,color='red',font=('Consolas', 12, 'bold')) # output Exception
@@ -770,7 +765,19 @@ class Entry(GraphicsObject):
         save_gui4sher() # update the save file
         root.update()
 
-            
+    def set_name(self, name):
+        """Set name of enty to name"""
+        old_name = self.name
+        self.name = name
+        # add a click command if one exists
+        try: exec('self.command = '+self.get_name()+'_return')
+        except (NameError, AttributeError): self.command = None # otherwise no command
+        if self.command != None:
+          self.button.config(command=self.command)
+        if self.id:
+            save_gui4sher() # update the save file
+            root.update()
+           
 
             
     def set_justify(self,justify):
@@ -963,7 +970,9 @@ class Text(GraphicsObject):
 class Button(GraphicsObject):
 
     def __init__(self, p, text):
+        debug_print('Initializing button graphics object',end='\n')
         GraphicsObject.__init__(self)
+        debug_print('Button Object initialized',end='\n')
         self.anchor = p.clone()
         #print self.anchor
         self.text = text
@@ -974,22 +983,9 @@ class Button(GraphicsObject):
         self.set_justify('center')
         self.frm = tk.Frame(graphics.master)
         self.set_width(len(text))
-        # put an empty definition for the click handler into the clicks window if no definition is already in the clicks window
-        clicks = clicks_window.get('1.0','end')
-        click_def_pattern = re.compile('def\s*'+self.get_name()+'_click')
-        if click_def_pattern.search(clicks) == None:
-          clicks_window.insert('end','\ndef '+self.get_name()+'_click:\n\t\n')
+        debug_print('Button Object name: '+self.get_name(),end='\n')
 
-        if self.command == None:
-          self.button = tk.Button(self.frm,
-                              width = len(text),
-                              text=text,
-                              bg = self.get_fill(),
-                              fg = self.get_outline(),
-                              font = self.get_font(),
-                              justify = self.get_justify())
-        else:
-          self.button = tk.Button(self.frm,
+        self.button = tk.Button(self.frm,
                               width = len(text),
                               text=text,
                               bg = self.get_fill(),
@@ -997,6 +993,7 @@ class Button(GraphicsObject):
                               font = self.get_font(),
                               justify = self.get_justify(),
                               command = self.handle_click)
+
           
 
     def __repr__(self):
@@ -1011,13 +1008,13 @@ class Button(GraphicsObject):
     def handle_click(self):
       ''' if it exists call the return function from the clicks file '''
       # do a return command if the return function exists
-      try: exec(self.get_name()+'_click()')
+      try: exec(self.get_name()+'_click()',globals())
       except (NameError, AttributeError): return None # otherwise no return behavior
-      except Error as e: say(e,color='red',font=('Consolas', 12, 'bold')) # output error
-      except Exception as exp: say(exp,color='red',font=('Consolas', 12, 'bold')) # output Exception
+      except: say(sys.exc_info(),color='red',font=('Consolas', 12, 'bold')) # output error
 
     def set_name(self, name):
         """Set name of button to name"""
+        old_name = self.name
         self.name = name
         # add a click command if one exists
         try: exec('self.command = '+self.get_name()+'_click')
@@ -1130,24 +1127,7 @@ class Check(GraphicsObject):
         self.set_width(len(text))
         self.checked = tk.BooleanVar()
         self.set_checked(False)
-        # put an empty definition for the click handler into the clicks window if no definition is already in the clicks window
-        clicks = clicks_window.get('1.0','end')
-        click_def_pattern = re.compile('def\s*'+self.get_name()+'_click')
-        if click_def_pattern.search(clicks) == None:
-          clicks_window.insert('end','\ndef '+self.get_name()+'_click:\n\t\n')
-
-        if self.command == None:
-          self.button = tk.Checkbutton(self.frm,
-                              width = len(text),
-                              text=text,
-                              bg = self.get_fill(),
-                              fg = self.get_outline(),
-                              font = self.get_font(),
-                              justify = self.get_justify(),
-                              variable=self.checked,
-                              onvalue=True,offvalue=False)
-        else:
-          self.button = tk.Checkbutton(self.frm,
+        self.button = tk.Checkbutton(self.frm,
                               width = len(text),
                               text=text,
                               bg = self.get_fill(),
@@ -1171,7 +1151,7 @@ class Check(GraphicsObject):
     def handle_click(self):
       ''' if it exists call the return function from the clicks file '''
       # do a return command if the return function exists
-      try: exec(self.get_name()+'_click()')
+      try: exec(self.get_name()+'_click()',globals())
       except (NameError, AttributeError): return None # otherwise no return behavior
       except Error as e: say(e,color='red',font=('Consolas', 12, 'bold')) # output error
       except Exception as exp: say(exp,color='red',font=('Consolas', 12, 'bold')) # output Exception
@@ -1190,6 +1170,7 @@ class Check(GraphicsObject):
 
     def set_name(self, name):
         """Set name of button to name"""
+        old_name = self.name
         self.name = name
         # add a click command if one exists
         try: exec('self.command = '+self.get_name()+'_click')
@@ -1331,25 +1312,8 @@ class Radio(GraphicsObject):
         self.set_justify('center')
         self.frm = tk.Frame(graphics.master)
         self.set_width(len(text))
-        # put an empty definition for the click handler into the clicks window if no definition is already in the clicks window
-        clicks = clicks_window.get('1.0','end')
-        click_def_pattern = re.compile('def\s*'+self.get_name()+'_click')
-        if click_def_pattern.search(clicks) == None:
-          clicks_window.insert('end','\ndef '+self.get_name()+'_click:\n\t\n')
 
-        if self.command == None:
-          self.button = tk.Radiobutton(self.frm,
-                              width = len(text),
-                              text=text,
-                              indicatoron = 0,
-                              bg = self.get_fill(),
-                              fg = self.get_outline(),
-                              font = self.get_font(),
-                              justify = self.get_justify(),
-                              variable= self.get_group().get_variable(),
-                              value=self.get_group().increment_new_value())
-        else:
-          self.button = tk.Radiobutton(self.frm,
+        self.button = tk.Radiobutton(self.frm,
                               width = len(text),
                               text=text,
                               indicatoron = 0,
@@ -1376,7 +1340,7 @@ class Radio(GraphicsObject):
       ''' If it exists call the return function from the clicks file. '''
       # do a return command if the return function exists
       debug_print('Click caused: '+self.get_group().get_name()+'_click('+self.get_name()+')',end='\n')
-      try: exec(self.get_group().get_name()+'_click('+self.get_name()+')')
+      try: exec(self.get_group().get_name()+'_click('+self.get_name()+')',globals())
       except (NameError, AttributeError): return None # otherwise no return behavior
       except Error as e: say(e,color='red',font=('Consolas', 12, 'bold')) # output error
       except Exception as exp: say(exp,color='red',font=('Consolas', 12, 'bold')) # output Exception
@@ -1401,8 +1365,8 @@ class Radio(GraphicsObject):
 
     def set_name(self, name):
         """Set name of button to name"""
-        self.original_name = name
-        self.name = self.get_group().get_name()+'_'+name
+        old_name = self.name
+        self.name = name
         # add a click command if one exists
         try: exec('self.command = '+self.get_name()+'_click')
         except (NameError, AttributeError): self.command = None # otherwise no command
@@ -1529,12 +1493,6 @@ class List(GraphicsObject):
         # add the items to a list
         self.set_items(items)
         self.list.bind("<<ListboxSelect>>",self.handle_select)
-        # put an empty definition for the select handler into the clicks window if no definition is already in the clicks window
-        clicks = clicks_window.get('1.0','end')
-        click_def_pattern = re.compile('def\s*'+self.get_name()+'_select')
-        if click_def_pattern.search(clicks) == None:
-          clicks_window.insert('end','\ndef '+self.get_name()+'_select:\n\t\n')
-
     def __repr__(self):
         to_return = "List({}, {})".format(self.anchor, self.width)
         return "List({}, {})".format(self.anchor, self.width)
@@ -1548,7 +1506,7 @@ class List(GraphicsObject):
     def handle_select(self,event):
       ''' if it exists call the select function from the clicks file '''
       # do a return command if the return function exists
-      try: exec(self.get_name()+'_select()')
+      try: exec(self.get_name()+'_select()',globals())
       except (NameError, AttributeError): return None # otherwise no return behavior
       except Error as e: say(e,color='red',font=('Consolas', 12, 'bold')) # output error
       except Exception as exp: say(exp,color='red',font=('Consolas', 12, 'bold')) # output Exception
@@ -1671,6 +1629,19 @@ class List(GraphicsObject):
     def get_width(self):
       return self.width
 
+    def set_name(self, name):
+        """Set name of select to name"""
+        old_name = self.name
+        self.name = name
+        # add a click command if one exists
+        try: exec('self.command = '+self.get_name()+'_select')
+        except (NameError, AttributeError): self.command = None # otherwise no command
+        if self.command != None:
+          self.button.config(command=self.command)
+        if self.id:
+            save_gui4sher() # update the save file
+            root.update()
+
 
     def to_exec(self):
       debug_print('Creating string to execute for Entry')
@@ -1729,6 +1700,7 @@ def mouse_ask(to_print,color='darkgreen',font=('serif',12),end=': '):
 
 def place_rectangle(name='',fill='',outline='black',width=1):
   ''' Interactive placement of a rectangle. '''
+  global objects
   name = valid_name(name,'Rectangle') # make sure the name of the object is valid
   # get the corners of the rectangle
   corner = mouse_ask('Click on a corner of rectangle "'+name+'"')
@@ -1743,8 +1715,8 @@ def place_rectangle(name='',fill='',outline='black',width=1):
   rect.set_fill(fill)
   rect.set_outline(outline)
   rect.set_width(width)
-  # initialize and draw the object with the name specified
-  exec(rect.to_exec(),globals())
+  rect.draw()
+  exec(name+'=objects[-1]',globals())
 
 ''' interactive functions to put down graphics and gui '''
 def place_oval(name='',fill='',outline='black',width=1):
@@ -1763,9 +1735,9 @@ def place_oval(name='',fill='',outline='black',width=1):
   oval.set_fill(fill)
   oval.set_outline(outline)
   oval.set_width(width)
-  # initialize and draw the object with the name specified
-  exec(oval.to_exec(),globals())
-    
+  oval.draw()
+  exec(name+'=objects[-1]',globals())
+  
 ''' interactive functions to put down graphics and gui '''
 def place_line(name='',fill='',outline='black',width=1):
   ''' Interactive placement of a line. '''
@@ -1783,8 +1755,8 @@ def place_line(name='',fill='',outline='black',width=1):
   line.set_fill(fill)
   line.set_outline(outline)
   line.set_width(width)
-  # initialize and draw the object with the name specified
-  exec(line.to_exec(),globals())
+  line.draw()
+  exec(name+'=objects[-1]',globals())
     
 ''' interactive functions to put down graphics and gui '''
 def place_dashed_line(name='',fill='',outline='black',width=1,dash=(5,5)):
@@ -1804,8 +1776,8 @@ def place_dashed_line(name='',fill='',outline='black',width=1,dash=(5,5)):
   line.set_outline(outline)
   line.set_width(width)
   line.set_dash(dash)
-  # initialize and draw the object with the name specified
-  exec(line.to_exec(),globals())
+  line.draw()
+  exec(name+'=objects[-1]',globals())
     
 ''' interactive functions to put down graphics and gui '''
 def place_circle(name='',fill='',outline='black',width=1):
@@ -1828,8 +1800,8 @@ def place_circle(name='',fill='',outline='black',width=1):
   circ.set_fill(fill)
   circ.set_outline(outline)
   circ.set_width(width)
-  # initialize and draw the object with the name specified
-  exec(circ.to_exec(),globals())
+  circ.draw()
+  exec(name+'=objects[-1]',globals())
     
 ''' interactive functions to put down graphics and gui '''
 def place_polygon(name='',fill='',outline='black',width=1):
@@ -1872,8 +1844,8 @@ def place_polygon(name='',fill='',outline='black',width=1):
   poly.set_fill(fill)
   poly.set_outline(outline)
   poly.set_width(width)
-  # initialize and draw the object with the name specified
-  exec(poly.to_exec(),globals())
+  poly.draw()
+  exec(name+'=objects[-1]',globals())
     
     
 ''' interactive functions to put down graphics and gui '''
@@ -1888,8 +1860,8 @@ def place_label(text,name='',fill='',outline='black',font=('times',14)):
   labl.set_fill(fill)
   labl.set_outline(outline)
   labl.set_font(font)
-  # initialize and draw the object with the name specified
-  exec(labl.to_exec(),globals())
+  labl.draw()
+  exec(name+'=objects[-1]',globals())
     
 ''' interactive functions to put down graphics and gui '''
 def place_entry(width,name='',fill='white',outline='black',font=('times',14)):
@@ -1903,8 +1875,8 @@ def place_entry(width,name='',fill='white',outline='black',font=('times',14)):
   entr.set_fill(fill)
   entr.set_outline(outline)
   entr.set_font(font)
-  # initialize and draw the object with the name specified
-  exec(entr.to_exec(),globals())
+  entr.draw()
+  exec(name+'=objects[-1]',globals())
 
 ''' interactive functions to put down graphics and gui '''
 def place_text(width,height,name='',fill='white',outline='black',font=('times',10)):
@@ -1919,8 +1891,8 @@ def place_text(width,height,name='',fill='white',outline='black',font=('times',1
   box.set_outline(outline)
   box.set_font(font)
   debug_print('Executing text box insert:\n'+box.to_exec())
-  # initialize and draw the object with the name specified
-  exec(box.to_exec(),globals())
+  box.draw()
+  exec(name+'=objects[-1]',globals())
     
 ''' interactive functions to put down graphics and gui '''
 def place_button(text,name='',fill='cyan',outline='black',font=('times',14)):
@@ -1929,13 +1901,17 @@ def place_button(text,name='',fill='cyan',outline='black',font=('times',14)):
   # get position of upper left corner of Button
   anchor = mouse_ask('Click on the position of the Button "'+name+'"')
   # make the button
+  debug_print('Creating Buttton',end='\n')
   butn = Button(anchor,text)
+  debug_print('Button created',end='\n')
   butn.set_name(name)
+  debug_print('Button named',end='\n')
   butn.set_fill(fill)
   butn.set_outline(outline)
   butn.set_font(font)
   # initialize and draw the object with the name specified
-  exec(butn.to_exec(),globals())
+  butn.draw()
+  exec(name+'=objects[-1]',globals())
     
 ''' interactive functions to put down graphics and gui '''
 def place_check(text,name='',fill='#EEEEEE',outline='black',font=('times',14)):
@@ -1949,8 +1925,8 @@ def place_check(text,name='',fill='#EEEEEE',outline='black',font=('times',14)):
   butn.set_fill(fill)
   butn.set_outline(outline)
   butn.set_font(font)
-  # initialize and draw the object with the name specified
-  exec(butn.to_exec(),globals())
+  butn.draw()
+  exec(name+'=objects[-1]',globals())
     
 ''' interactive functions to put down graphics and gui '''
 def place_list(items,name='',fill='yellow',outline='black',font=('times',14)):
@@ -1964,8 +1940,8 @@ def place_list(items,name='',fill='yellow',outline='black',font=('times',14)):
   lst.set_fill(fill)
   lst.set_outline(outline)
   lst.set_font(font)
-  # initialize and draw the object with the name specified
-  exec(lst.to_exec(),globals())
+  lst.draw()
+  exec(name+'=objects[-1]',globals())
     
 def place_radio(text,group='',name='',fill='light green',outline='dark blue',font=('Courier',14)):
   global objects
@@ -1988,8 +1964,8 @@ def place_radio(text,group='',name='',fill='light green',outline='dark blue',fon
   rad.set_fill(fill)
   rad.set_outline(outline)
   rad.set_font(font)
-  # initialize and draw the object with the name specified
-  exec(rad.to_exec(),globals())
+  rad.draw()
+  exec(name+'=objects[-1]',globals())
       
 
 # end shell not in app
@@ -2002,11 +1978,27 @@ def save_gui4sher(): return None
 
 change_title("app")
 ''' All the objects in the graphics are below '''
-circe = Circle(Point(286.0,137.0),119.47384651043926)
-circe.set_name('circe')
-circe.set_fill('yellow')
-circe.set_outline('black')
-circe.set_width('1')
-circe.draw()
-# not saved
+ccc = Circle(Point(284.0,123.0),64.03124237432849)
+ccc.set_name('ccc')
+ccc.set_fill('brown')
+ccc.set_outline('black')
+ccc.set_width('1')
+ccc.draw()
+color = Entry(Point(212.0,201.0),18)
+color.set_name('color')
+color.set_fill('white')
+color.set_outline('black')
+color.set_width('18')
+color.set_text('')
+color.set_font(('times', 14))
+color.set_justify('left')
+color.draw()
+
+def color_return():
+	ccc.set_fill(color.get_text())
+	color.set_text('')
+
+
+
+
 root.mainloop()

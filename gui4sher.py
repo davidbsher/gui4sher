@@ -12,7 +12,7 @@ from math import sqrt
 from contextlib import redirect_stdout
 
 # redirect stderr and stdout to strings
-GUI_DEBUG=False  # can turn on and off debugging by changing this
+GUI_DEBUG=True  # can turn on and off debugging by changing this
 def debug_print(to_print,end=''):
   ''' calls a print statement and puts it into the shell window '''
   global shell
@@ -147,7 +147,7 @@ class Shell(tk.Text):
   * copyright notice
 '''
 root = tk.Tk()
-root.title('Gui4Sher Window')
+root.title('Project in '+os.path.basename(__file__))
 root.configure(bg='darkblue')
 root.columnconfigure(0, weight=1)
 root.rowconfigure(0, weight=1)
@@ -792,8 +792,9 @@ class Polygon(GraphicsObject):
 
 class Label(GraphicsObject):
     
-    def __init__(self, p, text):
+    def __init__(self, p, text, name):
         GraphicsObject.__init__(self)
+        self.name = name
         self.set_text(text)
         self.set_justify(tk.CENTER)
         self.set_font(('helvetica',12))
@@ -864,7 +865,7 @@ class Label(GraphicsObject):
 
     def to_exec(self):
       ''' creates commands to create the line '''
-      exec_lines = [ self.name+ ' = ' + self.__class__.__name__ +'(Point('+str(self.anchor.x)+','+str(self.anchor.y)+'),"'+self.get_text()+'")',
+      exec_lines = [ self.name+ ' = ' + self.__class__.__name__ +'(Point('+str(self.anchor.x)+','+str(self.anchor.y)+'),"'+self.get_text()+'","'+self.get_name()+'")',
                      self.name + '.set_name(\'' + self.name + '\')',
                      self.name + '.set_fill(\''+ self.get_fill() + '\')',
                      self.name + ".set_outline('"+ self.get_outline() + "')",
@@ -878,9 +879,10 @@ class Label(GraphicsObject):
 
 class Entry(GraphicsObject):
 
-    def __init__(self, p, width):
+    def __init__(self, p, width,name):
         global clicks_window
         GraphicsObject.__init__(self)
+        self.name = name
         self.anchor = p.clone()
         #print self.anchor
         self.width = width
@@ -899,15 +901,16 @@ class Entry(GraphicsObject):
                               fg = self.get_outline(),
                               font = self.get_font())
         self.entry.bind("<Return>",self.handle_return)
+# begin shell not in app
         # put an empty definition for the return handler into the clicks window if no definition is already in the clicks window
         # put an empty definition for the click handler into the clicks window if no definition is already in the clicks window
         clicks = clicks_window.get('1.0','end')
-        debug_print('Putting click definition in ')
-        debug_print('for '+self.get_name(),end='\n')
-        click_def_pattern = re.compile('def\s*'+self.get_name()+'_return')
-        if click_def_pattern.search(clicks) == None:
+        if clicks.find('def '+self.get_name()+'_return') == -1:
+          debug_print('Putting click definition in ')
+          debug_print('for '+self.get_name(),end='\n')
           clicks_window.insert('end','\ndef '+self.get_name()+'_return():\n\tpass\n')
         debug_print('Clicks:\n'+clicks_window.get('1.0','end'))
+# end shell not in app
 
     def __repr__(self):
         return "Entry({}, {})".format(self.anchor, self.width)
@@ -963,13 +966,15 @@ class Entry(GraphicsObject):
         if self.id:
             save_gui4sher() # update the save file
             root.update()
-        # translate old name to new name in clicks_window
+# begin shell not in app
+       # translate old name to new name in clicks_window
         clicks = clicks_window.get('1.0','end')
         clicks = re.sub(r'(\W)'+old_name+r'(\W)',r'\1'+name+r'\2',clicks) # change the old name to the new name in clicks
         clicks = re.sub(r'(\W)'+old_name+r'_return(\W)',r'\1'+name+r'_return\2',clicks) # change the old name to the new name in clicks
         clicks_window.delete('1.0','end')
         clicks_window.insert('end',clicks)
-            
+# end shell not in app
+           
 
             
     def set_justify(self,justify):
@@ -1023,8 +1028,7 @@ class Entry(GraphicsObject):
     def to_exec(self):
       debug_print('Creating string to execute for Entry')
       ''' creates commands to create the line '''
-      exec_lines = [ self.name + ' = ' + self.__class__.__name__ +'(Point('+str(self.anchor.x)+','+str(self.anchor.y)+'),'+str(self.width)+')',
-                     self.name + '.set_name(\'' + self.name + '\')',
+      exec_lines = [ self.name + ' = ' + self.__class__.__name__ +'(Point('+str(self.anchor.x)+','+str(self.anchor.y)+'),'+str(self.width)+',"'+self.get_name()+'")',
                      self.name + '.set_fill(\''+ self.get_fill() + '\')',
                      self.name + ".set_outline('"+ self.get_outline() + "')",
                      self.name + ".set_width('"+ str(self.get_width())+ "')",
@@ -1037,8 +1041,9 @@ class Entry(GraphicsObject):
 
 class Text(GraphicsObject):
 
-    def __init__(self, p, width, height):
+    def __init__(self, p, width, height,name):
         GraphicsObject.__init__(self)
+        self.name = name
         self.anchor = p.clone()
         #print self.anchor
         self.width = width
@@ -1147,8 +1152,7 @@ class Text(GraphicsObject):
     def to_exec(self):
       debug_print('Creating string to execute for Text')
       ''' creates commands to create the line '''
-      exec_lines = [ self.name + ' = ' + self.__class__.__name__ +'(Point('+str(self.anchor.x)+','+str(self.anchor.y)+'),'+str(self.width)+','+str(self.height)+')',
-                     self.name + '.set_name(\'' + self.name + '\')',
+      exec_lines = [ self.name + ' = ' + self.__class__.__name__ +'(Point('+str(self.anchor.x)+','+str(self.anchor.y)+'),'+str(self.width)+','+str(self.height)+',"'+self.get_name()+'")',
                      self.name + '.set_fill(\''+ self.get_fill() + '\')',
                      self.name + ".set_outline('"+ self.get_outline() + "')",
                      self.name + ".set_width('"+ str(self.get_width())+ "')",
@@ -1161,9 +1165,10 @@ class Text(GraphicsObject):
 
 class Button(GraphicsObject):
 
-    def __init__(self, p, text):
+    def __init__(self, p, text, name):
         debug_print('Initializing button graphics object',end='\n')
         GraphicsObject.__init__(self)
+        self.name = name
         debug_print('Button Object initialized',end='\n')
         self.anchor = p.clone()
         #print self.anchor
@@ -1176,14 +1181,15 @@ class Button(GraphicsObject):
         self.frm = tk.Frame(graphics.master)
         self.set_width(len(text))
         debug_print('Button Object name: '+self.get_name(),end='\n')
+# begin shell not in app
         # put an empty definition for the click handler into the clicks window if no definition is already in the clicks window
         clicks = clicks_window.get('1.0','end')
-        debug_print('Putting click definition in ')
-        debug_print('for '+self.get_name(),end='\n')
-        click_def_pattern = re.compile('def\s*'+self.get_name()+'_click')
-        if click_def_pattern.search(clicks) == None:
+        if clicks.find('def '+self.get_name()+'_click') == -1:
+          debug_print('Putting click definition in ')
+          debug_print('for '+self.get_name(),end='\n')
           clicks_window.insert('end','\ndef '+self.get_name()+'_click():\n\tpass\n')
         debug_print('Clicks:\n'+clicks_window.get('1.0','end'))
+# end shell not in app
 
         self.button = tk.Button(self.frm,
                               width = len(text),
@@ -1224,12 +1230,14 @@ class Button(GraphicsObject):
         if self.id:
             save_gui4sher() # update the save file
             root.update()
+# begin shell not in app
         # translate old name to new name in clicks_window
         clicks = clicks_window.get('1.0','end')
         clicks = re.sub(r'(\W)'+old_name+r'(\W)',r'\1'+name+r'\2',clicks) # change the old name to the new name in clicks
         clicks = re.sub(r'(\W)'+old_name+r'_click(\W)',r'\1'+name+r'_click\2',clicks) # change the old name to the new name in clicks
         clicks_window.delete('1.0','end')
         clicks_window.insert('end',clicks)
+# end shell not in app
 
 
     def set_text(self,text):
@@ -1304,8 +1312,7 @@ class Button(GraphicsObject):
 
     def to_exec(self):
       ''' creates commands to create the line '''
-      exec_lines = [ self.name+ ' = ' + self.__class__.__name__ +'(Point('+str(self.anchor.x)+','+str(self.anchor.y)+'),"'+str(self.get_text())+'")',
-                     self.name + '.set_name(\'' + self.name + '\')',
+      exec_lines = [ self.name+ ' = ' + self.__class__.__name__ +'(Point('+str(self.anchor.x)+','+str(self.anchor.y)+'),"'+str(self.get_text())+'","'+self.get_name()+'")',
                      self.name + '.set_fill(\''+ self.get_fill() + '\')',
                      self.name + ".set_outline('"+ self.get_outline() + "')",
                      self.name + ".set_width('"+ str(self.get_width())+ "')",
@@ -1319,8 +1326,9 @@ class Button(GraphicsObject):
 
 class Check(GraphicsObject):
 
-    def __init__(self, p, text):
+    def __init__(self, p, text, name):
         GraphicsObject.__init__(self)
+        self.name = name
         self.anchor = p.clone()
         #print self.anchor
         self.text = text
@@ -1333,14 +1341,15 @@ class Check(GraphicsObject):
         self.set_width(len(text))
         self.checked = tk.BooleanVar()
         self.set_checked(False)
+# begin shell not in app
         # put an empty definition for the click handler into the clicks window if no definition is already in the clicks window
         clicks = clicks_window.get('1.0','end')
-        debug_print('Putting click definition in ')
-        debug_print('for '+self.get_name(),end='\n')
-        click_def_pattern = re.compile('def\s*'+self.get_name()+'_click')
-        if click_def_pattern.search(clicks) == None:
+        if clicks.find('def '+self.get_name()+'_click') == -1:
+          debug_print('Putting click definition in ')
+          debug_print('for '+self.get_name(),end='\n')
           clicks_window.insert('end','\ndef '+self.get_name()+'_click():\n\tpass\n')
         debug_print('Clicks:\n'+clicks_window.get('1.0','end'))
+# end shell not in app
         self.button = tk.Checkbutton(self.frm,
                               width = len(text),
                               text=text,
@@ -1394,12 +1403,14 @@ class Check(GraphicsObject):
         if self.id:
             save_gui4sher() # update the save file
             root.update()
-        # translate old name to new name in clicks_window
+# begin shell not in app
+       # translate old name to new name in clicks_window
         clicks = clicks_window.get('1.0','end')
         clicks = re.sub(r'(\W)'+old_name+r'(\W)',r'\1'+name+r'\2',clicks) # change the old name to the new name in clicks
         clicks = re.sub(r'(\W)'+old_name+r'_click(\W)',r'\1'+name+r'_click\2',clicks) # change the old name to the new name in clicks
         clicks_window.delete('1.0','end')
         clicks_window.insert('end',clicks)
+# end shell not in app
 
 
     def set_text(self,text):
@@ -1474,8 +1485,7 @@ class Check(GraphicsObject):
 
     def to_exec(self):
       ''' creates commands to create the line '''
-      exec_lines = [ self.name+ ' = ' + self.__class__.__name__ +'(Point('+str(self.anchor.x)+','+str(self.anchor.y)+'),"'+str(self.get_text())+'")',
-                     self.name + '.set_name(\'' + self.name + '\')',
+      exec_lines = [ self.name+ ' = ' + self.__class__.__name__ +'(Point('+str(self.anchor.x)+','+str(self.anchor.y)+'),"'+str(self.get_text())+'","'+self.get_name()+'")',
                      self.name + '.set_fill(\''+ self.get_fill() + '\')',
                      self.name + ".set_outline('"+ self.get_outline() + "')",
                      self.name + ".set_width('"+ str(self.get_width())+ "')",
@@ -1524,22 +1534,23 @@ class Radio(GraphicsObject):
         debug_print('Making radio button: '+name,end='\n')
         self.group = group
         GraphicsObject.__init__(self,fill='#AAFFAA')
+        self.name = name
         self.anchor = p.clone()
         self.text = text
         self.original_name = name  # needed to reinitialize or copy
-        self.set_name(name)
         self.set_font(("sanserif", 14,'bold'))
         self.set_justify('center')
         self.frm = tk.Frame(graphics.master)
         self.set_width(len(text))
+# begin shell not in app
         # put an empty definition for the click handler into the clicks window if no definition is already in the clicks window
         clicks = clicks_window.get('1.0','end')
-        debug_print('Putting click definition in ')
-        debug_print('for '+self.get_name(),end='\n')
-        click_def_pattern = re.compile('def\s*'+self.get_name()+'_click')
-        if click_def_pattern.search(clicks) == None:
+        if clicks.find('def '+self.get_name()+'_click') == -1:
+          debug_print('Putting click definition in ')
+          debug_print('for '+self.get_name(),end='\n')
           clicks_window.insert('end','\ndef '+self.get_name()+'_click():\n\tpass\n')
         debug_print('Clicks:\n'+clicks_window.get('1.0','end'))
+# end shell not in app
 
         self.button = tk.Radiobutton(self.frm,
                               width = len(text),
@@ -1603,12 +1614,14 @@ class Radio(GraphicsObject):
         if self.id:
             save_gui4sher() # update the save file
             root.update()
+# begin shell not in app
         # translate old name to new name in clicks_window
         clicks = clicks_window.get('1.0','end')
         clicks = re.sub(r'(\W)'+old_name+r'(\W)',r'\1'+name+r'\2',clicks) # change the old name to the new name in clicks
         clicks = re.sub(r'(\W)'+old_name+r'_click(\W)',r'\1'+name+r'_click\2',clicks) # change the old name to the new name in clicks
         clicks_window.delete('1.0','end')
         clicks_window.insert('end',clicks)
+# end shell not in app
 
 
     def set_text(self,text):
@@ -1683,8 +1696,7 @@ class Radio(GraphicsObject):
 
     def to_exec(self):
       ''' creates commands to create the line '''
-      exec_lines = [ self.name+ ' = ' + self.__class__.__name__ +'(Point('+str(self.anchor.x)+','+str(self.anchor.y)+'),"'+str(self.get_text())+'",'+self.get_group().get_name()+',"'+self.original_name+'")',
-                     self.name + '.name = \'' + self.name + '\'',
+      exec_lines = [ self.name+ ' = ' + self.__class__.__name__ +'(Point('+str(self.anchor.x)+','+str(self.anchor.y)+'),"'+str(self.get_text())+'",'+self.get_group().get_name()+',"'+self.get_name()+'")',
                      self.name + '.set_fill(\''+ self.get_fill() + '\')',
                      self.name + ".set_outline('"+ self.get_outline() + "')",
                      self.name + ".set_width('"+ str(self.get_width())+ "')",
@@ -1698,8 +1710,9 @@ class Radio(GraphicsObject):
 
 class List(GraphicsObject):
 
-    def __init__(self, p, items):
+    def __init__(self, p, items, name):
         GraphicsObject.__init__(self)
+        self.name = name
         self.anchor = p.clone()
         #print self.anchor
         self.anchor = p.clone()
@@ -1727,15 +1740,15 @@ class List(GraphicsObject):
         # add the items to a list
         self.set_items(items)
         self.list.bind("<<ListboxSelect>>",self.handle_select)
-        # put an empty definition for the select handler into the clicks window if no definition is already in the clicks window
+# begin shell not in app
+        # put an empty definition for the click handler into the clicks window if no definition is already in the clicks window
         clicks = clicks_window.get('1.0','end')
-        debug_print('Putting click definition in ')
-        debug_print('for '+self.get_name(),end='\n')
-        click_def_pattern = re.compile('def\s*'+self.get_name()+'_select')
-        if click_def_pattern.search(clicks) == None:
+        if clicks.find('def '+self.get_name()+'_select') == -1:
+          debug_print('Putting click definition in ')
+          debug_print('for '+self.get_name(),end='\n')
           clicks_window.insert('end','\ndef '+self.get_name()+'_select():\n\tpass\n')
         debug_print('Clicks:\n'+clicks_window.get('1.0','end'))
-
+# end shell not in app
     def __repr__(self):
         to_return = "List({}, {})".format(self.anchor, self.width)
         return "List({}, {})".format(self.anchor, self.width)
@@ -1884,19 +1897,20 @@ class List(GraphicsObject):
         if self.id:
             save_gui4sher() # update the save file
             root.update()
+# begin shell not in app
         # translate old name to new name in clicks_window
         clicks = clicks_window.get('1.0','end')
         clicks = re.sub(r'(\W)'+old_name+r'(\W)',r'\1'+name+r'\2',clicks) # change the old name to the new name in clicks
-        clicks = re.sub(r'(\W)'+old_name+r'_select(\W)',r'\1'+name+r'_click\2',clicks) # change the old name to the new name in clicks
+        clicks = re.sub(r'(\W)'+old_name+r'_select(\W)',r'\1'+name+r'_select\2',clicks) # change the old name to the new name in clicks
         clicks_window.delete('1.0','end')
         clicks_window.insert('end',clicks)
+# end shell not in app
 
 
     def to_exec(self):
       debug_print('Creating string to execute for Entry')
       ''' creates commands to create the line '''
-      exec_lines = [ self.name + ' = ' + self.__class__.__name__ +'(Point('+str(self.anchor.x)+','+str(self.anchor.y)+'),'+str(self.get_items())+')',
-                     self.name + '.set_name(\'' + self.name + '\')',
+      exec_lines = [ self.name + ' = ' + self.__class__.__name__ +'(Point('+str(self.anchor.x)+','+str(self.anchor.y)+'),'+str(self.get_items())+',"'+self.get_name()+'")',
                      self.name + '.set_fill(\''+ self.get_fill() + '\')',
                      self.name + ".set_outline('"+ self.get_outline() + "')",
                      self.name + ".set_width('"+ str(self.get_width())+ "')",
@@ -1963,7 +1977,6 @@ def save_gui4sher():
   debug_print('Got save file',end='\n')
   if not save_file.endswith('.py'):  # add .py extension to files without a .py extension
     save_file += '.py'
-  print(NO_SAVE+'\nchange_title(\'Project in '+save_file+'\')\n',file=saver,flush = True)
   # put in comment establishing objects
   print("''' All the objects in the graphics are below '''\n",file=saver,flush=True)
   # put commands to put every object drawn on graphics window into saver
@@ -2005,10 +2018,11 @@ def make_app():
   saver = open(app_file,mode='w+')
 
   # put in copyright line info
-  print(NO_SAVE+"\n''' code here manages copyright notice '''",file=saver,flush = True)
-  print(NO_SAVE+'\nauthors = "'+authors+'"',file=saver,flush = True)
-  print(NO_SAVE+'\nthanks = "'+thanks+'"',file=saver,flush = True)
-  print(NO_SAVE+'\nyear = "'+year+'"',file=saver,flush = True)
+  print("''' code here manages copyright notice '''",file=saver,flush = True)
+  print('\nauthors = "'+authors+'"',file=saver,flush = True)
+  print('\nthanks = "'+thanks+'"',file=saver,flush = True)
+  print('\nyear = "'+year+'"',file=saver,flush = True)
+
 
   read_lines = True # this is true when one should copy lines from the file into the app
   # copy all the lines from reader to saver except code lines with comment # not saved
@@ -2039,7 +2053,8 @@ def make_app():
   for obj in objects:
     print(obj.to_exec(),file=saver,flush=True)
   # needed to make gui work right
-  print("# not saved\nroot.mainloop()",file=saver,flush=True)
+  print(clicks_window.get('1.0','end'),file=saver,flush=True)
+  print("root.mainloop()",file=saver,flush=True)
   # finish files
   reader.close()
   saver.close()
@@ -2086,7 +2101,7 @@ def base_name(name):
     else: return name # nothing to remove
 
 # basic gui4sher source
-read_file = getcwd()+'/gui4sher.py'
+read_file = 'gui4sher.py'
 
 # not saved
 get_save()
@@ -2319,7 +2334,7 @@ def place_label(text,name='',fill='',outline='black',font=('times',14)):
   # get position of upper left corner of label
   anchor = mouse_ask('Click on the position of the Label "'+name+'"')
   # make the label
-  labl = Label(anchor,text)
+  labl = Label(anchor,text,name)
   labl.set_name(name)
   labl.set_fill(fill)
   labl.set_outline(outline)
@@ -2334,7 +2349,7 @@ def place_entry(width,name='',fill='white',outline='black',font=('times',14)):
   # get position of upper left corner of Entry
   anchor = mouse_ask('Click on the position of the Entry "'+name+'"')
   # make the Entry
-  entr = Entry(anchor,width)
+  entr = Entry(anchor,width,name)
   entr.set_name(name)
   entr.set_fill(fill)
   entr.set_outline(outline)
@@ -2349,7 +2364,7 @@ def place_text(width,height,name='',fill='white',outline='black',font=('times',1
   # get position of upper left corner of Entry
   anchor = mouse_ask('Click on the position of the Text "'+name+'"')
   # make the Entry
-  box = Text(anchor,width,height)
+  box = Text(anchor,width,height,name)
   box.set_name(name)
   box.set_fill(fill)
   box.set_outline(outline)
@@ -2366,7 +2381,7 @@ def place_button(text,name='',fill='cyan',outline='black',font=('times',14)):
   anchor = mouse_ask('Click on the position of the Button "'+name+'"')
   # make the button
   debug_print('Creating Buttton',end='\n')
-  butn = Button(anchor,text)
+  butn = Button(anchor,text,name)
   debug_print('Button created',end='\n')
   butn.set_name(name)
   debug_print('Button named',end='\n')
@@ -2384,7 +2399,7 @@ def place_check(text,name='',fill='#EEEEEE',outline='black',font=('times',14)):
   # get position of upper left corner of Button
   anchor = mouse_ask('Click on the position of the Check "'+name+'"')
   # make the button
-  butn = Check(anchor,text)
+  butn = Check(anchor,text,name)
   butn.set_name(name)
   butn.set_fill(fill)
   butn.set_outline(outline)
@@ -2399,7 +2414,7 @@ def place_list(items,name='',fill='yellow',outline='black',font=('times',14)):
   # get position of upper left corner of List
   anchor = mouse_ask('Click on the position of the List "'+name+'"')
   # make the List
-  lst = List(anchor,items)
+  lst = List(anchor,items,name)
   lst.set_name(name)
   lst.set_fill(fill)
   lst.set_outline(outline)
@@ -2420,7 +2435,7 @@ def place_radio(text,group='',name='',fill='light green',outline='dark blue',fon
     for thing in objects:
       if thing.get_name() == group:
         the_group = thing
-  name = valid_name(name,'Radio',prefix=group) # make sure the name of the object is valid
+  name = valid_name(name,'Radio',prefix=group,name=name) # make sure the name of the object is valid
   # get position of upper left corner of Radio
   anchor = mouse_ask('Click on the position of the Radio "'+name+'"')
   # make the List
