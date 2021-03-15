@@ -12,7 +12,7 @@ from math import sqrt
 from contextlib import redirect_stdout
 
 # redirect stderr and stdout to strings
-GUI_DEBUG=True  # can turn on and off debugging by changing this
+GUI_DEBUG=False  # can turn on and off debugging by changing this
 def debug_print(to_print,end=''):
   ''' calls a print statement and puts it into the shell window '''
   global shell
@@ -1977,6 +1977,12 @@ def save_gui4sher():
   debug_print('Got save file',end='\n')
   if not save_file.endswith('.py'):  # add .py extension to files without a .py extension
     save_file += '.py'
+  # set up clicks window in save file
+  debug_print('clicks_window.insert(\'end\','+repr(clicks_window.get('1.0','end'))+')\n')
+  print(NO_SAVE+'\nclicks_window.insert(\'end\','+repr(clicks_window.get('1.0','end'))+')\n',file=saver,flush=True)
+  debug_print('exec(clicks_window.get(\'1.0\',\'end\'))\n')
+  print(NO_SAVE+'\nexec(clicks_window.get(\'1.0\',\'end\'))\n',file=saver,flush=True)
+
   # put in comment establishing objects
   print("''' All the objects in the graphics are below '''\n",file=saver,flush=True)
   # put commands to put every object drawn on graphics window into saver
@@ -1986,10 +1992,6 @@ def save_gui4sher():
     debug_print(obj.to_exec())
     debug_print('''
 ''')
-  debug_print('clicks_window.insert(\'end\','+repr(clicks_window.get('1.0','end'))+')\n')
-  print(NO_SAVE+'\nclicks_window.insert(\'end\','+repr(clicks_window.get('1.0','end'))+')\n',file=saver,flush=True)
-  debug_print('exec(clicks_window.get(\'1.0\',\'end\'))\n')
-  print(NO_SAVE+'\nexec(clicks_window.get(\'1.0\',\'end\'))\n',file=saver,flush=True)
   # needed to make gui work right
   print(NO_SAVE+"\nroot.mainloop()",file=saver,flush=True)
   debug_print('Done Saving')

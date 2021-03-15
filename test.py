@@ -1977,6 +1977,12 @@ def save_gui4sher():
   debug_print('Got save file',end='\n')
   if not save_file.endswith('.py'):  # add .py extension to files without a .py extension
     save_file += '.py'
+  # set up clicks window in save file
+  debug_print('clicks_window.insert(\'end\','+repr(clicks_window.get('1.0','end'))+')\n')
+  print(NO_SAVE+'\nclicks_window.insert(\'end\','+repr(clicks_window.get('1.0','end'))+')\n',file=saver,flush=True)
+  debug_print('exec(clicks_window.get(\'1.0\',\'end\'))\n')
+  print(NO_SAVE+'\nexec(clicks_window.get(\'1.0\',\'end\'))\n',file=saver,flush=True)
+
   # put in comment establishing objects
   print("''' All the objects in the graphics are below '''\n",file=saver,flush=True)
   # put commands to put every object drawn on graphics window into saver
@@ -1986,10 +1992,6 @@ def save_gui4sher():
     debug_print(obj.to_exec())
     debug_print('''
 ''')
-  debug_print('clicks_window.insert(\'end\','+repr(clicks_window.get('1.0','end'))+')\n')
-  print(NO_SAVE+'\nclicks_window.insert(\'end\','+repr(clicks_window.get('1.0','end'))+')\n',file=saver,flush=True)
-  debug_print('exec(clicks_window.get(\'1.0\',\'end\'))\n')
-  print(NO_SAVE+'\nexec(clicks_window.get(\'1.0\',\'end\'))\n',file=saver,flush=True)
   # needed to make gui work right
   print(NO_SAVE+"\nroot.mainloop()",file=saver,flush=True)
   debug_print('Done Saving')
@@ -2453,52 +2455,21 @@ def place_radio(text,group='',name='',fill='light green',outline='dark blue',fon
 
 # not saved
 save_file = __file__
-''' All the objects in the graphics are below '''
-
-ccc = Circle(Point(265.0,128.0),65.0)
-ccc.set_name('ccc')
-ccc.set_fill('red')
-ccc.set_outline('black')
-ccc.set_width('5')
-ccc.draw()
-color = Entry(Point(209.0,205.0),10,"color")
-color.set_fill('white')
-color.set_outline('black')
-color.set_width('10')
-color.set_text('')
-color.set_font(('times', 14))
-color.set_justify('left')
-color.draw()
-colors = List(Point(385.0,35.0),['red', 'green', 'blue', 'white', 'black', 'orange', 'yellow', 'purple'],"colors")
-colors.set_fill('yellow')
-colors.set_outline('black')
-colors.set_width('6')
-colors.set_height('5')
-colors.set_font(('times', 14))
-colors.set_justify('left')
-colors.draw()
-outline = Check(Point(339.0,205.0),"Outline","outline")
-outline.set_fill('#EEEEEE')
-outline.set_outline('black')
-outline.set_width('7')
-outline.set_text('Outline')
-outline.set_font(('times', 14))
-outline.set_justify('center')
-outline.set_checked('False')
-outline.draw()
-words = Text(Point(41.0,67.0),30,6,"words")
-words.set_fill('white')
-words.set_outline('black')
-words.set_width('30')
-words.set_height('6')
-words.set_text('')
-words.set_font(('times', 10))
-words.draw()
 # not saved
-clicks_window.insert('end',"\ndef color_return():\n\tpass\n\ndef colors_select():\n\tpass\n\ndef outline_click():\n\tpass\n\ndef color_return():\n\tpass\n\ndef colors_select():\n\tpass\n\ndef outline_click():\n\tpass\n\ndef color_return():\n\tpass\n\ndef colors_select():\n\tpass\n\ndef color_return():\n\tpass\n\ndef color_return():\n\tpass\n\ndef color_return():\n\tif outline.get_checked():\n\t\tccc.set_outline(color.get_text())\n\telse:\n\t\tccc.set_fill(color.get_text())\n\tcolor.set_text('')\n\n\n\n\n\n\n\ndef colors_select():\n\tif outline.get_checked():\n\t\tccc.set_outline(colors.selected())\n\telse:\n\t\tccc.set_fill(colors.selected())\n\n\n\n\ndef outline_click():\n\tpass\n\n\n\n\n")
+clicks_window.insert('end',"click_counter = 0\ndef clicker_click():\n\tglobal click_counter\n\tclick_counter += 1\n\tclicker.set_text('Clicked '+str(click_counter)+' times')\n\n\n\n\n\n")
 
 # not saved
 exec(clicks_window.get('1.0','end'))
 
+''' All the objects in the graphics are below '''
+
+clicker = Button(Point(135.0,109.0),"Clicked 3 times","clicker")
+clicker.set_fill('cyan')
+clicker.set_outline('black')
+clicker.set_width('15')
+clicker.set_text('Clicked 3 times')
+clicker.set_font(('times', 14))
+clicker.set_justify('center')
+clicker.draw()
 # not saved
 root.mainloop()
