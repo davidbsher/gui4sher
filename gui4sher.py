@@ -2136,7 +2136,8 @@ def toggle_edit():
         debug_print('Executing:\n'+clicks_window.get('1.0','end'))
         exec(clicks_window.get('1.0','end'),globals())
         debug_print('Widget Actions Changed\n')
-        say('Widget Actions Changed\n')
+        say('Widget Actions Changed\n',color='gray')
+        save_gui4sher()
     except: # catch all exceptions
         debug_print(sys.exc_info(),color='red')
         debug_print('All Widget Actions not successfully changed\n',color='red')

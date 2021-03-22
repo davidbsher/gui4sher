@@ -2134,7 +2134,8 @@ def toggle_edit():
         debug_print('Executing:\n'+clicks_window.get('1.0','end'))
         exec(clicks_window.get('1.0','end'),globals())
         debug_print('Widget Actions Changed\n')
-        say('Widget Actions Changed\n')
+        say('Widget Actions Changed\n',color='gray')
+        save_gui4sher()
     except: # catch all exceptions
         debug_print(sys.exc_info(),color='red')
         debug_print('All Widget Actions not successfully changed\n',color='red')
@@ -2456,20 +2457,12 @@ def place_radio(text,group='',name='',fill='light green',outline='dark blue',fon
 # not saved
 save_file = __file__
 # not saved
-clicks_window.insert('end',"click_counter = 0\ndef clicker_click():\n\tglobal click_counter\n\tclick_counter += 1\n\tclicker.set_text('Clicked '+str(click_counter)+' times')\n\n\n\n\n\n")
+clicks_window.insert('end','\n')
 
 # not saved
 exec(clicks_window.get('1.0','end'))
 
 ''' All the objects in the graphics are below '''
 
-clicker = Button(Point(135.0,109.0),"Clicked 3 times","clicker")
-clicker.set_fill('cyan')
-clicker.set_outline('black')
-clicker.set_width('15')
-clicker.set_text('Clicked 3 times')
-clicker.set_font(('times', 14))
-clicker.set_justify('center')
-clicker.draw()
 # not saved
 root.mainloop()
