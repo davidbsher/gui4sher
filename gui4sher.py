@@ -1157,7 +1157,7 @@ class Text(GraphicsObject):
                      self.name + ".set_outline('"+ self.get_outline() + "')",
                      self.name + ".set_width('"+ str(self.get_width())+ "')",
                      self.name + ".set_height('"+ str(self.get_height())+ "')",
-                     self.name + ".set_text('"+ self.get_text()+ "')",
+                     self.name + ".set_text('''"+ self.get_text()+ "''')", # text has multiple lines
                      self.name + '.set_font(' + str(self.get_font()) + ')',
                      self.name + '.draw()']
       return '''
@@ -1498,215 +1498,6 @@ class Check(GraphicsObject):
       return '''
 '''.join(exec_lines)
 
-group_names = [] # list of RadioGroup names
-
-class RadioGroup():
-  ''' Defines a group of radio buttons connected to each other so only 1 can be checked at a time. '''
-  def __init__(self,name):
-    self.variable = tk.IntVar() # string vars don't work for radio groups
-    self.variable.set(0)
-    self.new_value = 1;
-    self.name = name
-    objects.append(self)
-    group_names.append(name)
-
-  def get_variable(self):
-    return self.variable
-
-  def increment_new_value(self):
-    ''' Incrementes the new value variable the next radio button in the group will match this '''
-    self.new_value += 1
-    return self.new_value - 1   # value to use for new radio button
-
-  def get_value(self):
-    return self.variable.get()
-
-
-  def get_name(self):
-    return self.name
-
-  def to_exec(self):
-    return self.name+ ' = ' + self.__class__.__name__ +'(\''+self.name+'\')\n' 
-
-class Radio(GraphicsObject):
-
-    def __init__(self, p, text, group, name):
-        debug_print('Making radio button: '+name,end='\n')
-        self.group = group
-        GraphicsObject.__init__(self,fill='#AAFFAA')
-        self.name = name
-        self.anchor = p.clone()
-        self.text = text
-        self.original_name = name  # needed to reinitialize or copy
-        self.set_font(("sanserif", 14,'bold'))
-        self.set_justify('center')
-        self.frm = tk.Frame(graphics.master)
-        self.set_width(len(text))
-# begin shell not in app
-        # put an empty definition for the click handler into the clicks window if no definition is already in the clicks window
-        clicks = clicks_window.get('1.0','end')
-        if clicks.find('def '+self.get_name()+'_click') == -1:
-          debug_print('Putting click definition in ')
-          debug_print('for '+self.get_name(),end='\n')
-          clicks_window.insert('end','\ndef '+self.get_name()+'_click():\n\tpass\n')
-        debug_print('Clicks:\n'+clicks_window.get('1.0','end'))
-# end shell not in app
-
-        self.button = tk.Radiobutton(self.frm,
-                              width = len(text),
-                              text=text,
-                              indicatoron = 0,
-                              bg = self.get_fill(),
-                              fg = self.get_outline(),
-                              font = self.get_font(),
-                              justify = self.get_justify(),
-                              variable= self.get_group().get_variable(),
-                              value=self.get_group().increment_new_value(),
-                              command = self.handle_click)
-        self.button.deselect() # button should start out not selected
-          
-
-    def __repr__(self):
-        return "Button({}, {})".format(self.anchor, self.text)
-
-    def _draw(self, canvas):
-        p = self.anchor
-        the_button = canvas.create_window(p.x,p.y,window=self.frm,anchor='nw')
-        self.button.pack()
-        return the_button
-
-    def handle_click(self):
-      ''' If it exists call the return function from the clicks file. '''
-      # do a return command if the return function exists
-      debug_print('Click caused: '+self.get_group().get_name()+'_click('+self.get_name()+')',end='\n')
-      try: exec(self.get_group().get_name()+'_click('+self.get_name()+')',globals())
-      except (NameError, AttributeError): return None # otherwise no return behavior
-      except Error as e: say(e,color='red',font=('Consolas', 12, 'bold')) # output error
-      except Exception as exp: say(exp,color='red',font=('Consolas', 12, 'bold')) # output Exception
-
-    def get_group(self):
-      ''' Which RadioGroup does it belong to. '''
-      return self.group
-
-    def select(self):
-      ''' Clicks the Radio. '''
-      self.button.select()
-      if self.id:
-        save_gui4sher() # update the save file
-        root.update()
-
-    def deselect(self):
-      ''' Unclicks the Radio. '''
-      self.button.deselect()
-      if self.id:
-        save_gui4sher() # update the save file
-        root.update()
-
-    def set_name(self, name):
-        """Set name of button to name"""
-        old_name = self.name
-        self.name = name
-        # add a click command if one exists
-        try: exec('self.command = '+self.get_name()+'_click')
-        except (NameError, AttributeError): self.command = None # otherwise no command
-        if self.command != None:
-          self.button.config(command=self.command)
-        if self.id:
-            save_gui4sher() # update the save file
-            root.update()
-# begin shell not in app
-        # translate old name to new name in clicks_window
-        clicks = clicks_window.get('1.0','end')
-        clicks = re.sub(r'(\W)'+old_name+r'(\W)',r'\1'+name+r'\2',clicks) # change the old name to the new name in clicks
-        clicks = re.sub(r'(\W)'+old_name+r'_click(\W)',r'\1'+name+r'_click\2',clicks) # change the old name to the new name in clicks
-        clicks_window.delete('1.0','end')
-        clicks_window.insert('end',clicks)
-# end shell not in app
-
-
-    def set_text(self,text):
-      self.text = text
-      self.button.config(text=self.get_text())
-      self.set_width(len(self.get_text()))
-      if self.id:
-          save_gui4sher() # update the save file
-          root.update()
-
-    def get_text(self):
-        return self.text
-
-    def _move(self, dx, dy):
-        self.anchor.move(dx,dy)
-
-    def get_anchor(self):
-        return self.anchor.clone()
-
-    def clone(self):
-        other = Button(self.anchor, self.get_text())
-        other.config = self.config.copy()
-        other.set_name(self.name)
-        other.text = self.text
-        return other
-
-    def set_justify(self,justify):
-      self.justify = justify
-      if self.id:
-          self.button.config(justify=self.get_justify())
-          save_gui4sher() # update the save file
-          root.update()
-
-    def get_justify(self):
-      return self.justify
-
-    def set_font(self,font):
-      self.font = font
-      if self.id:
-          self.button.config(font=self.get_font())
-          save_gui4sher() # update the save file
-          root.update()
-
-    def get_font(self):
-      return self.font
-
-    def set_fill(self, color):
-        """Set interior color to color"""
-        self.fill = color
-        if self.id:
-          self.button.config(bg=self.get_fill())
-          save_gui4sher() # update the save file
-          root.update()
-
-    def set_outline(self, color):
-        """Set outline color to color"""
-        self.outline = color
-        if self.id:
-          self.button.config(fg=self.get_outline())
-          save_gui4sher() # update the save file
-          root.update()
-
-    def set_width(self, width):
-        """Set line weight to width"""
-        self.width = width
-        if self.id:
-          self.button.config(width=self.get_width())
-          save_gui4sher() # update the save file
-          root.update()
-
-
-
-    def to_exec(self):
-      ''' creates commands to create the line '''
-      exec_lines = [ self.name+ ' = ' + self.__class__.__name__ +'(Point('+str(self.anchor.x)+','+str(self.anchor.y)+'),"'+str(self.get_text())+'",'+self.get_group().get_name()+',"'+self.get_name()+'")',
-                     self.name + '.set_fill(\''+ self.get_fill() + '\')',
-                     self.name + ".set_outline('"+ self.get_outline() + "')",
-                     self.name + ".set_width('"+ str(self.get_width())+ "')",
-                     self.name + ".set_text('"+ self.get_text()+ "')",
-                     self.name + '.set_font(' + str(self.get_font()) + ')',
-                     self.name + '.set_justify(\''+self.get_justify() + '\')',
-                     self.name + '.draw()'
-                     ]
-      return '''
-'''.join(exec_lines)
 
 class List(GraphicsObject):
 
@@ -1803,7 +1594,7 @@ class List(GraphicsObject):
       ''' Adds item into list. '''
       self.list.insert(tk.END,item)
       # if item is wider than list make list wider
-      if len(item) > int(self.get_width()) : self.set_width(len(item))
+      if len(str(item)) > int(self.get_width()) : self.set_width(len(str(item)))
       if self.id:
         save_gui4sher() # update the save file
         root.update()
@@ -1980,8 +1771,6 @@ def save_gui4sher():
   # set up clicks window in save file
   debug_print('clicks_window.insert(\'end\','+repr(clicks_window.get('1.0','end'))+')\n')
   print(NO_SAVE+'\nclicks_window.insert(\'end\','+repr(clicks_window.get('1.0','end'))+')\n',file=saver,flush=True)
-  debug_print('exec(clicks_window.get(\'1.0\',\'end\'))\n')
-  print(NO_SAVE+'\nexec(clicks_window.get(\'1.0\',\'end\'))\n',file=saver,flush=True)
 
   # put in comment establishing objects
   print("''' All the objects in the graphics are below '''\n",file=saver,flush=True)
@@ -1992,6 +1781,8 @@ def save_gui4sher():
     debug_print(obj.to_exec())
     debug_print('''
 ''')
+  debug_print('try:\n\texec(clicks_window.get(\'1.0\',\'end\'))\nexcept:\n\tsay(sys.exc_info(),color=red,font=("courier",14,"bold"))\n')
+  print(NO_SAVE+'\ntry:\n\texec(clicks_window.get(\'1.0\',\'end\'))\nexcept:\n\tsay(sys.exc_info(),color=red,font=("courier",14,"bold"))\n',file=saver,flush=True)
   # needed to make gui work right
   print(NO_SAVE+"\nroot.mainloop()",file=saver,flush=True)
   debug_print('Done Saving')
@@ -2141,7 +1932,7 @@ def toggle_edit():
     except: # catch all exceptions
         debug_print(sys.exc_info(),color='red')
         debug_print('All Widget Actions not successfully changed\n',color='red')
-        say(sys.exc_info(),color='red')
+        say(sys.exc_info(),color='red',font=('courier',14,'bold'))
         say('All Widget Actions not successfully changed\n',color='red')
 
 click_toggle.config(command=toggle_edit)
