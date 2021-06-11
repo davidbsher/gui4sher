@@ -1,11 +1,3 @@
-# not saved
-''' code here manages copyright notice '''
-# not saved
-authors = "David B. Sher"
-# not saved
-thanks = "John Zelle"
-# not saved
-year = "2020"
 import tkinter as tk
 import sys, io, os
 import subprocess as subp
@@ -18,9 +10,10 @@ from math import sqrt
 
 
 from contextlib import redirect_stdout
-
+# begin shell not in app
 # redirect stderr and stdout to strings
 GUI_DEBUG=True  # can turn on and off debugging by changing this
+
 def debug_print(to_print,end=''):
   ''' calls a print statement and puts it into the shell window '''
   global shell
@@ -30,7 +23,125 @@ def debug_print(to_print,end=''):
     shell.tag_configure('debug',foreground='blue',font=('Consolas', 12, 'italic'))
     shell.mark_set(tk.INSERT, tk.END) # make sure the input cursor is at the end
     shell.cursor = shell.index(tk.INSERT) # save the input position
+# end shell not in app
 
+# begin shell not in app
+say_number = 0    # makes all the tags different
+def say(to_print,color='#884400',font=('serif',12),end='\n'):
+  global say_number
+  ''' allows programs to communicate with shell, don't use with stand alone apps '''
+  global shell
+  shell.insert(tk.END,to_print+end,'say{}'.format(say_number))
+  shell.tag_configure('say{}'.format(say_number),foreground=color,font=font)
+  say_number += 1 # will not change formating of other things said
+  shell.see(tk.END) # make sure it is visible
+  shell.mark_set(tk.INSERT, tk.END) # make sure the input cursor is at the end
+  shell.cursor = shell.index(tk.INSERT) # save the input position
+
+def ask(to_print,color='darkgreen',font=('serif',12),end=': '):
+  ''' asks user a question and returns response '''
+  global shell
+  shell.set_asking(True) # make sure the shell doesn't execute user input
+  say(to_print,color,font,end)
+  shell.wait_variable(shell.cmd)
+  shell.set_asking(False) # the shell can execute user input again
+  return shell.cmd.get()
+  
+  
+''' This is the code for the shell widget in python '''
+class Shell(tk.Text):
+  def __init__(self, parent, **kwargs):
+    tk.Text.__init__(self, parent, **kwargs)
+    self.bind('<Key>', self.on_key) # setup handler to process pressed keys
+    self.cmd = tk.StringVar()        # hold the last command issued
+    self.set_asking(False)          # execute user input
+    self.show_prompt()
+
+  def insert_text(self, txt='', end='\n'):
+    ''' Appends the given text to the end of the Text Box. '''
+    self.insert(tk.END, txt+end)
+    self.see(tk.END) # make sure it is visible
+
+  def insert_error(self, txt='', end='\n'):
+    ''' Appends an error message to the end of the Text Box.  '''
+    self.insert(tk.END, txt+end,'error')
+    self.see(tk.END) # make sure it is visible
+    shell.tag_configure('error',foreground='red',font=('Consolas', 12, 'bold'))
+
+  def set_asking(self,asks):
+    ''' When true doesn't execute user input '''
+    self.asking = asks
+
+  def get_asking(self):
+    return self.asking
+
+  def show_prompt(self):
+    ''' Prompts for a command. '''
+    self.insert_text('>> ', end='')
+    self.mark_set(tk.INSERT, tk.END) # make sure the input cursor is at the end
+    self.cursor = self.index(tk.INSERT) # save the input position
+
+  # handler to process keyboard input
+  def on_key(self, event):
+    #print(event)
+    if event.keysym == 'Up':
+      # show the last command
+      self.delete(self.cursor, tk.END)
+      self.insert(self.cursor, self.cmd)
+      return "break" # disable the default handling of up key
+    if event.keysym == 'Down':
+      return "break" # disable the default handling of down key
+    if event.keysym in ('Left', 'BackSpace'):
+      current = self.index(tk.INSERT) # get the current position of the input cursor
+      if self.compare(current, '==', self.cursor):
+        # if input cursor is at the beginning of input (after the prompt), do nothing
+        return "break"
+    if event.keysym == 'Return':
+      # extract the command input
+      cmd = self.get(self.cursor, tk.END).strip()
+      self.insert_text() # advance to next line
+      if cmd.startswith('`'):
+        # it is an external command
+        self.system(cmd)
+      else:
+        # it is python statement
+        self.execute(cmd)
+      self.show_prompt()
+      return "break" # disable the default handling of Enter key
+    if event.keysym == 'Escape':
+      self.master.destroy() # quit the shell
+
+  def execute(self, cmd):
+    ''' execute input from user '''
+    exec_result = io.StringIO()
+    exec_error = io.StringIO()
+    sys.stdout = exec_result
+    sys.stderr = exec_error
+    self.cmd.set(cmd) # save the command
+    if not self.get_asking():  # don't execute user input when ask
+      # capture the result and error from exec to shell
+      try:
+        exec(self.cmd.get(), globals())
+      except: # catch all exceptions
+        print(sys.exc_info(),file=sys.stderr)
+      # then append the output of exec() in the Text box
+      self.insert_text(exec_result.getvalue(), end='')
+      self.insert_error(exec_error.getvalue(), end='')
+
+  def system(self, cmd):
+    ''' execute a command '''
+    self.cmd.set(cmd)  # save the command
+    if not self.get_asking():
+      try:
+        # extract the actual command
+        cmd = cmd[cmd.index('`')+1:cmd.rindex('`')]
+        proc = subp.Popen(cmd, stdout=subp.PIPE, stderr=subp.PIPE, text=True)
+        stdout, stderr = proc.communicate(5) # get the command output
+        # append the command output to Text box
+        self.insert_text(stdout)
+      except: # catch all exceptions
+        self.insert_error(stderr)
+# end shell not in app
 ''' this sets up the window with
   * header (with project file)
   * graphics
@@ -38,7 +149,7 @@ def debug_print(to_print,end=''):
   * copyright notice
 '''
 root = tk.Tk()
-root.title('Gui4Sher Window')
+root.title('Project in '+__file__)
 root.configure(bg='darkblue')
 root.columnconfigure(0, weight=1)
 root.rowconfigure(0, weight=1)
@@ -59,6 +170,44 @@ top.pack(side=tk.LEFT)
 top.columnconfigure(0, weight=1)
 top.rowconfigure(0, weight=1)
 
+# begin shell not in app
+# buttons frame holds control buttons
+buttons = tk.Frame(GUIframe)
+buttons.pack(side=tk.RIGHT)
+
+
+# click_toggle will switch between the python shell and the clicks editor
+click_toggle = tk.Button(buttons,
+                        width = 6,
+                        text='Edit\nClicks',
+                        bg = 'lightgreen',
+                        fg = 'black',
+                        font = 'courier',
+                        justify = 'cent')
+click_toggle.pack()
+
+# make_app_button will call make_app to create an app from the code
+make_app_button = tk.Button(buttons,
+                        width = 4,
+                        text='Make\nApp',
+                        bg = 'lightgreen',
+                        fg = 'black',
+                        font = 'courier',
+                        justify = 'cent')
+make_app_button.pack()
+
+# names_ button will output to the shell all the names of the graphics and GUI objects
+names_button = tk.Button(buttons,
+                        width = 5,
+                        text = 'Names',
+                        bg = 'lightgreen',
+                        fg = 'black',
+                        font = 'courier',
+                        justify = 'cent')
+names_button.pack()
+
+                         
+# end shell not in app
 
 # bottom frame will hold shell
 bottom = tk.Frame(root)
@@ -73,6 +222,51 @@ copy_frame.grid(row=row_number)
 row_number+=1  # next row
 copy_frame.columnconfigure(0, weight=1)
 copy_frame.rowconfigure(0, weight=1)
+
+# begin shell not in app
+''' create scrollbars for shell '''
+# Vertical (y) Scroll Bar
+shell_scroll = tk.Scrollbar(bottom)
+shell_scroll.pack(side=tk.RIGHT, fill=tk.Y)
+shell_hscroll = tk.Scrollbar(bottom, orient=tk.HORIZONTAL)
+shell_hscroll.pack(side=tk.BOTTOM, fill=tk.X)
+''' put shell window into bottom frame '''
+shell = Shell(bottom,wrap=tk.NONE, yscrollcommand=shell_scroll.set, xscrollcommand=shell_hscroll.set, width=80, height=16,  font=('Consolas', 12))
+shell.pack(fill=tk.BOTH, expand = tk.YES, side="left")
+shell.focus_set()
+shell.columnconfigure(0, weight=1)
+shell.rowconfigure(0, weight=1)
+# Configure the scrollbars
+shell_scroll.config(command=shell.yview)
+shell_hscroll.config(command=shell.xview)
+
+# clicks window
+clicks_window = tk.Text(bottom,wrap=tk.NONE, yscrollcommand=shell_scroll.set, xscrollcommand=shell_hscroll.set, width=80, height=16,  font=('Lucida Console', 12))
+
+
+# end shell not in app
+
+
+def my_exec(cmd, globals=None, locals=None, description='source string'):
+    ''' executes a string (like from my_clicks and reports where errors occured in shell '''
+    try:
+        exec(cmd, globals, locals)
+    except SyntaxError as err:
+        error_class = err.__class__.__name__
+        detail = err.args[0]
+        line_number = err.lineno
+    except (NameError, AttributeError) as err: 
+        error_class = err.__class__.__name__
+        detail = err.args[0]
+        line_number = err.lineno
+    except Exception as err:
+        error_class = err.__class__.__name__
+        detail = err.args[0]
+        cl, exc, tb = sys.exc_info()
+        line_number = traceback.extract_tb(tb)[-1][1]
+    else:
+        return
+    say("%s at line %d of %s: %s" % (error_class, line_number, description, detail),color='red')
 
 
 ''' define a canvas that captures mouse events '''
@@ -128,6 +322,14 @@ class MouseCanvas(tk.Canvas):
 graphics = MouseCanvas()
 graphics.pack(fill=tk.BOTH, expand = 1)
 
+# not saved
+''' code here manages copyright notice '''
+# not saved
+authors = 'David B. Sher'
+# not saved
+thanks = 'John Zelle'
+# not saved
+year = '2020'
 
 copyright_string = tk.StringVar()
 copyright_string.set('Copyright {} {} with thanks to {}'.format(authors,year,thanks))
@@ -615,8 +817,9 @@ class Polygon(GraphicsObject):
 
 class Label(GraphicsObject):
     
-    def __init__(self, p, text):
+    def __init__(self, p, text, name):
         GraphicsObject.__init__(self)
+        self.name = name
         self.set_text(text)
         self.set_justify(tk.CENTER)
         self.set_font(('helvetica',12))
@@ -687,7 +890,7 @@ class Label(GraphicsObject):
 
     def to_exec(self):
       ''' creates commands to create the line '''
-      exec_lines = [ self.name+ ' = ' + self.__class__.__name__ +'(Point('+str(self.anchor.x)+','+str(self.anchor.y)+'),"'+self.get_text()+'")',
+      exec_lines = [ self.name+ ' = ' + self.__class__.__name__ +'(Point('+str(self.anchor.x)+','+str(self.anchor.y)+'),"'+self.get_text()+'","'+self.get_name()+'")',
                      self.name + '.set_name(\'' + self.name + '\')',
                      self.name + '.set_fill(\''+ self.get_fill() + '\')',
                      self.name + ".set_outline('"+ self.get_outline() + "')",
@@ -701,9 +904,10 @@ class Label(GraphicsObject):
 
 class Entry(GraphicsObject):
 
-    def __init__(self, p, width):
+    def __init__(self, p, width,name):
         global clicks_window
         GraphicsObject.__init__(self)
+        self.name = name
         self.anchor = p.clone()
         #print self.anchor
         self.width = width
@@ -722,6 +926,16 @@ class Entry(GraphicsObject):
                               fg = self.get_outline(),
                               font = self.get_font())
         self.entry.bind("<Return>",self.handle_return)
+# begin shell not in app
+        # put an empty definition for the return handler into the clicks window if no definition is already in the clicks window
+        # put an empty definition for the click handler into the clicks window if no definition is already in the clicks window
+        clicks = clicks_window.get('1.0','end')
+        if clicks.find('def '+self.get_name()+'_return') == -1:
+          debug_print('Putting click definition in ')
+          debug_print('for '+self.get_name(),end='\n')
+          clicks_window.insert('end','\ndef '+self.get_name()+'_return():\n\tpass\n')
+        debug_print('Clicks:\n'+clicks_window.get('1.0','end'))
+# end shell not in app
 
     def __repr__(self):
         return "Entry({}, {})".format(self.anchor, self.width)
@@ -736,7 +950,11 @@ class Entry(GraphicsObject):
     def handle_return(self,event):
       ''' if it exists call the return function from the clicks file '''
       # do a return command if the return function exists
-      try: exec(self.get_name()+'_return()',globals())
+      try:
+        try:
+          globals()[self.get_name()+'_return']()
+        except Exception as e:
+          say(str(e),color='red')
       except (NameError, AttributeError): return None # otherwise no return behavior
       except Error as e: say(e,color='red',font=('Consolas', 12, 'bold')) # output error
       except Exception as exp: say(exp,color='red',font=('Consolas', 12, 'bold')) # output Exception
@@ -777,6 +995,14 @@ class Entry(GraphicsObject):
         if self.id:
             save_gui4sher() # update the save file
             root.update()
+# begin shell not in app
+       # translate old name to new name in clicks_window
+        clicks = clicks_window.get('1.0','end')
+        clicks = re.sub(r'(\W)'+old_name+r'(\W)',r'\1'+name+r'\2',clicks) # change the old name to the new name in clicks
+        clicks = re.sub(r'(\W)'+old_name+r'_return(\W)',r'\1'+name+r'_return\2',clicks) # change the old name to the new name in clicks
+        clicks_window.delete('1.0','end')
+        clicks_window.insert('end',clicks)
+# end shell not in app
            
 
             
@@ -831,8 +1057,7 @@ class Entry(GraphicsObject):
     def to_exec(self):
       debug_print('Creating string to execute for Entry')
       ''' creates commands to create the line '''
-      exec_lines = [ self.name + ' = ' + self.__class__.__name__ +'(Point('+str(self.anchor.x)+','+str(self.anchor.y)+'),'+str(self.width)+')',
-                     self.name + '.set_name(\'' + self.name + '\')',
+      exec_lines = [ self.name + ' = ' + self.__class__.__name__ +'(Point('+str(self.anchor.x)+','+str(self.anchor.y)+'),'+str(self.width)+',"'+self.get_name()+'")',
                      self.name + '.set_fill(\''+ self.get_fill() + '\')',
                      self.name + ".set_outline('"+ self.get_outline() + "')",
                      self.name + ".set_width('"+ str(self.get_width())+ "')",
@@ -845,8 +1070,9 @@ class Entry(GraphicsObject):
 
 class Text(GraphicsObject):
 
-    def __init__(self, p, width, height):
+    def __init__(self, p, width, height,name):
         GraphicsObject.__init__(self)
+        self.name = name
         self.anchor = p.clone()
         #print self.anchor
         self.width = width
@@ -955,13 +1181,12 @@ class Text(GraphicsObject):
     def to_exec(self):
       debug_print('Creating string to execute for Text')
       ''' creates commands to create the line '''
-      exec_lines = [ self.name + ' = ' + self.__class__.__name__ +'(Point('+str(self.anchor.x)+','+str(self.anchor.y)+'),'+str(self.width)+','+str(self.height)+')',
-                     self.name + '.set_name(\'' + self.name + '\')',
+      exec_lines = [ self.name + ' = ' + self.__class__.__name__ +'(Point('+str(self.anchor.x)+','+str(self.anchor.y)+'),'+str(self.width)+','+str(self.height)+',"'+self.get_name()+'")',
                      self.name + '.set_fill(\''+ self.get_fill() + '\')',
                      self.name + ".set_outline('"+ self.get_outline() + "')",
                      self.name + ".set_width('"+ str(self.get_width())+ "')",
                      self.name + ".set_height('"+ str(self.get_height())+ "')",
-                     self.name + ".set_text('"+ self.get_text()+ "')",
+                     self.name + ".set_text('''"+ self.get_text()+ "''')", # text has multiple lines
                      self.name + '.set_font(' + str(self.get_font()) + ')',
                      self.name + '.draw()']
       return '''
@@ -969,9 +1194,10 @@ class Text(GraphicsObject):
 
 class Button(GraphicsObject):
 
-    def __init__(self, p, text):
+    def __init__(self, p, text, name):
         debug_print('Initializing button graphics object',end='\n')
         GraphicsObject.__init__(self)
+        self.name = name
         debug_print('Button Object initialized',end='\n')
         self.anchor = p.clone()
         #print self.anchor
@@ -984,6 +1210,15 @@ class Button(GraphicsObject):
         self.frm = tk.Frame(graphics.master)
         self.set_width(len(text))
         debug_print('Button Object name: '+self.get_name(),end='\n')
+# begin shell not in app
+        # put an empty definition for the click handler into the clicks window if no definition is already in the clicks window
+        clicks = clicks_window.get('1.0','end')
+        if clicks.find('def '+self.get_name()+'_click') == -1:
+          debug_print('Putting click definition in ')
+          debug_print('for '+self.get_name(),end='\n')
+          clicks_window.insert('end','\ndef '+self.get_name()+'_click():\n\tpass\n')
+        debug_print('Clicks:\n'+clicks_window.get('1.0','end'))
+# end shell not in app
 
         self.button = tk.Button(self.frm,
                               width = len(text),
@@ -1006,9 +1241,15 @@ class Button(GraphicsObject):
         return the_button
 
     def handle_click(self):
+      global globals
+      global locals
       ''' if it exists call the return function from the clicks file '''
       # do a return command if the return function exists
-      try: exec(self.get_name()+'_click()',globals())
+      try:
+        try:
+          globals()[self.get_name()+'_click']()
+        except Exception as e:
+          say(str(e),color='red')
       except (NameError, AttributeError): return None # otherwise no return behavior
       except: say(sys.exc_info(),color='red',font=('Consolas', 12, 'bold')) # output error
 
@@ -1024,6 +1265,14 @@ class Button(GraphicsObject):
         if self.id:
             save_gui4sher() # update the save file
             root.update()
+# begin shell not in app
+        # translate old name to new name in clicks_window
+        clicks = clicks_window.get('1.0','end')
+        clicks = re.sub(r'(\W)'+old_name+r'(\W)',r'\1'+name+r'\2',clicks) # change the old name to the new name in clicks
+        clicks = re.sub(r'(\W)'+old_name+r'_click(\W)',r'\1'+name+r'_click\2',clicks) # change the old name to the new name in clicks
+        clicks_window.delete('1.0','end')
+        clicks_window.insert('end',clicks)
+# end shell not in app
 
 
     def set_text(self,text):
@@ -1098,8 +1347,7 @@ class Button(GraphicsObject):
 
     def to_exec(self):
       ''' creates commands to create the line '''
-      exec_lines = [ self.name+ ' = ' + self.__class__.__name__ +'(Point('+str(self.anchor.x)+','+str(self.anchor.y)+'),"'+str(self.get_text())+'")',
-                     self.name + '.set_name(\'' + self.name + '\')',
+      exec_lines = [ self.name+ ' = ' + self.__class__.__name__ +'(Point('+str(self.anchor.x)+','+str(self.anchor.y)+'),"'+str(self.get_text())+'","'+self.get_name()+'")',
                      self.name + '.set_fill(\''+ self.get_fill() + '\')',
                      self.name + ".set_outline('"+ self.get_outline() + "')",
                      self.name + ".set_width('"+ str(self.get_width())+ "')",
@@ -1113,8 +1361,9 @@ class Button(GraphicsObject):
 
 class Check(GraphicsObject):
 
-    def __init__(self, p, text):
+    def __init__(self, p, text, name):
         GraphicsObject.__init__(self)
+        self.name = name
         self.anchor = p.clone()
         #print self.anchor
         self.text = text
@@ -1127,6 +1376,15 @@ class Check(GraphicsObject):
         self.set_width(len(text))
         self.checked = tk.BooleanVar()
         self.set_checked(False)
+# begin shell not in app
+        # put an empty definition for the click handler into the clicks window if no definition is already in the clicks window
+        clicks = clicks_window.get('1.0','end')
+        if clicks.find('def '+self.get_name()+'_click') == -1:
+          debug_print('Putting click definition in ')
+          debug_print('for '+self.get_name(),end='\n')
+          clicks_window.insert('end','\ndef '+self.get_name()+'_click():\n\tpass\n')
+        debug_print('Clicks:\n'+clicks_window.get('1.0','end'))
+# end shell not in app
         self.button = tk.Checkbutton(self.frm,
                               width = len(text),
                               text=text,
@@ -1151,7 +1409,11 @@ class Check(GraphicsObject):
     def handle_click(self):
       ''' if it exists call the return function from the clicks file '''
       # do a return command if the return function exists
-      try: exec(self.get_name()+'_click()',globals())
+      try:
+        try:
+          globals()[self.get_name()+'_click']()
+        except Exception as e:
+          say(str(e),color='red')
       except (NameError, AttributeError): return None # otherwise no return behavior
       except Error as e: say(e,color='red',font=('Consolas', 12, 'bold')) # output error
       except Exception as exp: say(exp,color='red',font=('Consolas', 12, 'bold')) # output Exception
@@ -1180,6 +1442,14 @@ class Check(GraphicsObject):
         if self.id:
             save_gui4sher() # update the save file
             root.update()
+# begin shell not in app
+       # translate old name to new name in clicks_window
+        clicks = clicks_window.get('1.0','end')
+        clicks = re.sub(r'(\W)'+old_name+r'(\W)',r'\1'+name+r'\2',clicks) # change the old name to the new name in clicks
+        clicks = re.sub(r'(\W)'+old_name+r'_click(\W)',r'\1'+name+r'_click\2',clicks) # change the old name to the new name in clicks
+        clicks_window.delete('1.0','end')
+        clicks_window.insert('end',clicks)
+# end shell not in app
 
 
     def set_text(self,text):
@@ -1254,8 +1524,7 @@ class Check(GraphicsObject):
 
     def to_exec(self):
       ''' creates commands to create the line '''
-      exec_lines = [ self.name+ ' = ' + self.__class__.__name__ +'(Point('+str(self.anchor.x)+','+str(self.anchor.y)+'),"'+str(self.get_text())+'")',
-                     self.name + '.set_name(\'' + self.name + '\')',
+      exec_lines = [ self.name+ ' = ' + self.__class__.__name__ +'(Point('+str(self.anchor.x)+','+str(self.anchor.y)+'),"'+str(self.get_text())+'","'+self.get_name()+'")',
                      self.name + '.set_fill(\''+ self.get_fill() + '\')',
                      self.name + ".set_outline('"+ self.get_outline() + "')",
                      self.name + ".set_width('"+ str(self.get_width())+ "')",
@@ -1268,204 +1537,12 @@ class Check(GraphicsObject):
       return '''
 '''.join(exec_lines)
 
-group_names = [] # list of RadioGroup names
-
-class RadioGroup():
-  ''' Defines a group of radio buttons connected to each other so only 1 can be checked at a time. '''
-  def __init__(self,name):
-    self.variable = tk.IntVar() # string vars don't work for radio groups
-    self.variable.set(0)
-    self.new_value = 1;
-    self.name = name
-    objects.append(self)
-    group_names.append(name)
-
-  def get_variable(self):
-    return self.variable
-
-  def increment_new_value(self):
-    ''' Incrementes the new value variable the next radio button in the group will match this '''
-    self.new_value += 1
-    return self.new_value - 1   # value to use for new radio button
-
-  def get_value(self):
-    return self.variable.get()
-
-
-  def get_name(self):
-    return self.name
-
-  def to_exec(self):
-    return self.name+ ' = ' + self.__class__.__name__ +'(\''+self.name+'\')\n' 
-
-class Radio(GraphicsObject):
-
-    def __init__(self, p, text, group, name):
-        debug_print('Making radio button: '+name,end='\n')
-        self.group = group
-        GraphicsObject.__init__(self,fill='#AAFFAA')
-        self.anchor = p.clone()
-        self.text = text
-        self.original_name = name  # needed to reinitialize or copy
-        self.set_name(name)
-        self.set_font(("sanserif", 14,'bold'))
-        self.set_justify('center')
-        self.frm = tk.Frame(graphics.master)
-        self.set_width(len(text))
-
-        self.button = tk.Radiobutton(self.frm,
-                              width = len(text),
-                              text=text,
-                              indicatoron = 0,
-                              bg = self.get_fill(),
-                              fg = self.get_outline(),
-                              font = self.get_font(),
-                              justify = self.get_justify(),
-                              variable= self.get_group().get_variable(),
-                              value=self.get_group().increment_new_value(),
-                              command = self.handle_click)
-        self.button.deselect() # button should start out not selected
-          
-
-    def __repr__(self):
-        return "Button({}, {})".format(self.anchor, self.text)
-
-    def _draw(self, canvas):
-        p = self.anchor
-        the_button = canvas.create_window(p.x,p.y,window=self.frm,anchor='nw')
-        self.button.pack()
-        return the_button
-
-    def handle_click(self):
-      ''' If it exists call the return function from the clicks file. '''
-      # do a return command if the return function exists
-      debug_print('Click caused: '+self.get_group().get_name()+'_click('+self.get_name()+')',end='\n')
-      try: exec(self.get_group().get_name()+'_click('+self.get_name()+')',globals())
-      except (NameError, AttributeError): return None # otherwise no return behavior
-      except Error as e: say(e,color='red',font=('Consolas', 12, 'bold')) # output error
-      except Exception as exp: say(exp,color='red',font=('Consolas', 12, 'bold')) # output Exception
-
-    def get_group(self):
-      ''' Which RadioGroup does it belong to. '''
-      return self.group
-
-    def select(self):
-      ''' Clicks the Radio. '''
-      self.button.select()
-      if self.id:
-        save_gui4sher() # update the save file
-        root.update()
-
-    def deselect(self):
-      ''' Unclicks the Radio. '''
-      self.button.deselect()
-      if self.id:
-        save_gui4sher() # update the save file
-        root.update()
-
-    def set_name(self, name):
-        """Set name of button to name"""
-        old_name = self.name
-        self.name = name
-        # add a click command if one exists
-        try: exec('self.command = '+self.get_name()+'_click')
-        except (NameError, AttributeError): self.command = None # otherwise no command
-        if self.command != None:
-          self.button.config(command=self.command)
-        if self.id:
-            save_gui4sher() # update the save file
-            root.update()
-
-
-    def set_text(self,text):
-      self.text = text
-      self.button.config(text=self.get_text())
-      self.set_width(len(self.get_text()))
-      if self.id:
-          save_gui4sher() # update the save file
-          root.update()
-
-    def get_text(self):
-        return self.text
-
-    def _move(self, dx, dy):
-        self.anchor.move(dx,dy)
-
-    def get_anchor(self):
-        return self.anchor.clone()
-
-    def clone(self):
-        other = Button(self.anchor, self.get_text())
-        other.config = self.config.copy()
-        other.set_name(self.name)
-        other.text = self.text
-        return other
-
-    def set_justify(self,justify):
-      self.justify = justify
-      if self.id:
-          self.button.config(justify=self.get_justify())
-          save_gui4sher() # update the save file
-          root.update()
-
-    def get_justify(self):
-      return self.justify
-
-    def set_font(self,font):
-      self.font = font
-      if self.id:
-          self.button.config(font=self.get_font())
-          save_gui4sher() # update the save file
-          root.update()
-
-    def get_font(self):
-      return self.font
-
-    def set_fill(self, color):
-        """Set interior color to color"""
-        self.fill = color
-        if self.id:
-          self.button.config(bg=self.get_fill())
-          save_gui4sher() # update the save file
-          root.update()
-
-    def set_outline(self, color):
-        """Set outline color to color"""
-        self.outline = color
-        if self.id:
-          self.button.config(fg=self.get_outline())
-          save_gui4sher() # update the save file
-          root.update()
-
-    def set_width(self, width):
-        """Set line weight to width"""
-        self.width = width
-        if self.id:
-          self.button.config(width=self.get_width())
-          save_gui4sher() # update the save file
-          root.update()
-
-
-
-    def to_exec(self):
-      ''' creates commands to create the line '''
-      exec_lines = [ self.name+ ' = ' + self.__class__.__name__ +'(Point('+str(self.anchor.x)+','+str(self.anchor.y)+'),"'+str(self.get_text())+'",'+self.get_group().get_name()+',"'+self.original_name+'")',
-                     self.name + '.name = \'' + self.name + '\'',
-                     self.name + '.set_fill(\''+ self.get_fill() + '\')',
-                     self.name + ".set_outline('"+ self.get_outline() + "')",
-                     self.name + ".set_width('"+ str(self.get_width())+ "')",
-                     self.name + ".set_text('"+ self.get_text()+ "')",
-                     self.name + '.set_font(' + str(self.get_font()) + ')',
-                     self.name + '.set_justify(\''+self.get_justify() + '\')',
-                     self.name + '.draw()'
-                     ]
-      return '''
-'''.join(exec_lines)
 
 class List(GraphicsObject):
 
-    def __init__(self, p, items):
+    def __init__(self, p, items, name):
         GraphicsObject.__init__(self)
+        self.name = name
         self.anchor = p.clone()
         #print self.anchor
         self.anchor = p.clone()
@@ -1493,6 +1570,15 @@ class List(GraphicsObject):
         # add the items to a list
         self.set_items(items)
         self.list.bind("<<ListboxSelect>>",self.handle_select)
+# begin shell not in app
+        # put an empty definition for the click handler into the clicks window if no definition is already in the clicks window
+        clicks = clicks_window.get('1.0','end')
+        if clicks.find('def '+self.get_name()+'_select') == -1:
+          debug_print('Putting click definition in ')
+          debug_print('for '+self.get_name(),end='\n')
+          clicks_window.insert('end','\ndef '+self.get_name()+'_select():\n\tpass\n')
+        debug_print('Clicks:\n'+clicks_window.get('1.0','end'))
+# end shell not in app
     def __repr__(self):
         to_return = "List({}, {})".format(self.anchor, self.width)
         return "List({}, {})".format(self.anchor, self.width)
@@ -1506,7 +1592,11 @@ class List(GraphicsObject):
     def handle_select(self,event):
       ''' if it exists call the select function from the clicks file '''
       # do a return command if the return function exists
-      try: exec(self.get_name()+'_select()',globals())
+      try:
+        try:
+          globals()[self.get_name()+'_select']()
+        except Exception as e:
+          say(str(e),color='red')
       except (NameError, AttributeError): return None # otherwise no return behavior
       except Error as e: say(e,color='red',font=('Consolas', 12, 'bold')) # output error
       except Exception as exp: say(exp,color='red',font=('Consolas', 12, 'bold')) # output Exception
@@ -1547,7 +1637,7 @@ class List(GraphicsObject):
       ''' Adds item into list. '''
       self.list.insert(tk.END,item)
       # if item is wider than list make list wider
-      if len(item) > int(self.get_width()) : self.set_width(len(item))
+      if len(str(item)) > int(self.get_width()) : self.set_width(len(str(item)))
       if self.id:
         save_gui4sher() # update the save file
         root.update()
@@ -1641,13 +1731,20 @@ class List(GraphicsObject):
         if self.id:
             save_gui4sher() # update the save file
             root.update()
+# begin shell not in app
+        # translate old name to new name in clicks_window
+        clicks = clicks_window.get('1.0','end')
+        clicks = re.sub(r'(\W)'+old_name+r'(\W)',r'\1'+name+r'\2',clicks) # change the old name to the new name in clicks
+        clicks = re.sub(r'(\W)'+old_name+r'_select(\W)',r'\1'+name+r'_select\2',clicks) # change the old name to the new name in clicks
+        clicks_window.delete('1.0','end')
+        clicks_window.insert('end',clicks)
+# end shell not in app
 
 
     def to_exec(self):
       debug_print('Creating string to execute for Entry')
       ''' creates commands to create the line '''
-      exec_lines = [ self.name + ' = ' + self.__class__.__name__ +'(Point('+str(self.anchor.x)+','+str(self.anchor.y)+'),'+str(self.get_items())+')',
-                     self.name + '.set_name(\'' + self.name + '\')',
+      exec_lines = [ self.name + ' = ' + self.__class__.__name__ +'(Point('+str(self.anchor.x)+','+str(self.anchor.y)+'),'+str(self.get_items())+',"'+self.get_name()+'")',
                      self.name + '.set_fill(\''+ self.get_fill() + '\')',
                      self.name + ".set_outline('"+ self.get_outline() + "')",
                      self.name + ".set_width('"+ str(self.get_width())+ "')",
@@ -1671,6 +1768,252 @@ def names():
 
 def change_title(titler):
   root.title(titler)
+
+''' common colors '''
+red = 'red'
+green = 'green'
+blue = 'blue'
+white = 'white'
+black = 'black'
+gray = 'gray'
+orange = 'orange'
+purple = 'purple'
+violet = 'violet'
+yellow = 'yellow'
+brown = 'brown'
+cyan = 'cyan'
+magenta = 'magenta'
+pink = 'pink'
+
+
+
+# begin shell not in app
+# not saved
+save_file = ''
+# end shell not in app
+
+# not saved
+NO_SAVE = '''
+# not saved'''
+
+# begin shell not in app
+def save_gui4sher():
+  ''' save_gui4sher creates a gui4sher with all the current objects '''
+  global read_file
+  global save_file
+  global NO_SAVE
+  # open the basic gui4sher
+  reader = open(read_file,mode='r')
+  debug_print('Reading from ')
+  debug_print(read_file)
+  debug_print('''
+''')
+  # string to put lines to write to the save file
+  save_lines = ''
+  # put in copyright line info
+  save_lines += NO_SAVE+"\n''' code here manages copyright notice '''"
+  save_lines += NO_SAVE+'\nauthors = "'+authors+'"'
+  save_lines += NO_SAVE+'\nthanks = "'+thanks+'"'
+  save_lines += NO_SAVE+'\nyear = "'+year+'"\n'
+  save_lines += NO_SAVE+'\nNO_SAVE = \'\'\'\n# not saved\'\'\'\n\n'
+  # put in the save file name
+  save_lines += NO_SAVE+"\nsave_file = __file__\n\n"
+  # copy all the lines from reader to saver except code lines with comment # not saved
+  for line in reader:
+    if 0 == line.find('# not to copy'): break # everything afterwards are objects and stuff that will be automatically updated and copied
+    if 0 == line.find('# not saved'):
+      # don't write this line or the next
+      reader.readline()
+    else:
+      save_lines += line
+  # insert comment to indicate what shouldn't be copied
+  save_lines += '\n# not to copy'
+  # set up clicks window in save file
+  debug_print('clicks_window.insert(\'end\','+repr(clicks_window.get('1.0','end'))+')\n')
+  save_lines += NO_SAVE+'\nclicks_window.insert(\'end\','+repr(clicks_window.get('1.0','end'))+')\n'
+
+  # put in comment establishing objects
+  save_lines +="''' All the objects in the graphics are below '''"+ '''
+'''
+  # put commands to put every object drawn on graphics window into saver
+  for obj in objects:
+    save_lines += obj.to_exec()+ '''
+'''
+    debug_print('Saving Object: ')
+    debug_print(obj.to_exec())
+    debug_print('''
+''')
+  debug_print('try:\n\texec(clicks_window.get(\'1.0\',\'end\'))\nexcept:\n\tsay(sys.exc_info(),color=red,font=("courier",14,"bold"))\n')
+  save_lines +='''
+  my_exec(clicks_window.get(\'1.0\',\'end\'),globals())
+'''
+  # read all lines from original file 
+  reader.close()
+  # open the file to save to 
+  saver = open(save_file,mode='w+')
+  debug_print('Saving to ')
+  debug_print(save_file)
+  debug_print('''
+''')
+  print(save_lines,file=saver, flush = True)
+  # needed to make gui work right
+  print(NO_SAVE+"\nroot.mainloop()",file=saver,flush=True)
+  debug_print('Done Saving')
+  debug_print('''
+''')
+  # finish saving files
+  saver.close()
+
+
+
+''' creates a py file that generates an app with the graphics and gui but no shell '''  
+def make_app():
+  global read_file
+  global save_file
+    
+  root.withdraw()  # GUI4sher window dissapears
+  app_file = tk.filedialog.asksaveasfilename(title='Select or enter name for app',filetypes = (("python files","*.py"),("all files","*.*")))
+  root.deiconify() # Get GUI4sher window back
+
+  if len(app_file) == 0: # dialog was cancelled
+    say('Not making an app!',color='red')
+    return
+  if not app_file.endswith('.py'):  # add .py extension to files without any extension
+    app_file += '.py'
+
+  # open the basic gui4sher
+  reader = open(read_file,mode='r')
+  # open the file to save to 
+  saver = open(app_file,mode='w+')
+
+  # put in copyright line info
+  print("''' code here manages copyright notice '''",file=saver,flush = True)
+  print('\nauthors = "'+authors+'"',file=saver,flush = True)
+  print('\nthanks = "'+thanks+'"',file=saver,flush = True)
+  print('\nyear = "'+year+'"',file=saver,flush = True)
+
+  # don't do debug_print's in app
+  print("def debug_print(to_print,end=''):\n\tpass\n",file=saver,flush = True)
+
+
+  read_lines = True # this is true when one should copy lines from the file into the app
+  # copy all the lines from reader to saver except code lines with comment # not saved
+  for line in reader:
+    if read_lines:
+      if 0 == line.find(NO_SAVE):
+        # don't write this line or the next
+        reader.readline()
+      elif 0 == line.find('# begin shell not in app'):
+        # don't write line until # end shell not in app
+        read_lines = False
+      else:
+        print(line,end='',file=saver,flush=True)
+        debug_print('''Copied {}
+'''.format(line))
+    else:
+      if 0 == line.find('# end shell not in app'):
+        # start copying lines again
+        read_lines = True
+  # don't do any saving since app won't modify
+  print("def save_gui4sher(): return None\n",file=saver,flush=True)
+  # set up app title
+  print('change_title("'+os.path.basename(app_file)+'")',file=saver,flush = True)
+  
+  # put in comment establishing objects
+  print("''' All the objects in the graphics are below '''",file=saver,flush=True)
+  # put commands to put every object drawn on graphics window into saver
+  for obj in objects:
+    debug_print('Saving object in app: '+obj.to_exec())
+    print(obj.to_exec(),file=saver,flush=True)
+  # needed to make gui work right
+  debug_print('Saving clicks in app: '+clicks_window.get('1.0','end'))
+  print(clicks_window.get('1.0','end'),file=saver,flush=True)
+  print("root.mainloop()",file=saver,flush=True)
+  # finish files
+  reader.close()
+  saver.close()
+  debug_print('''Done make_app
+''')
+  # run the app
+  debug_print('''python "{}"
+'''.format(app_file))
+  system('python "{}"'.format(app_file))
+
+
+def get_save():
+  ''' gets a file to save changes to.
+      file will be saved after each graphics draw command
+  '''
+  global save_file
+  global root
+  debug_print('In get_save',end='\n')
+  save_file = ''
+  counter = 0
+  # keep demanding a save file until the user provides one
+  while len(save_file)==0:
+    root.withdraw()  # GUI4sher window dissapears
+    debug_print('Updated root\n')
+    counter+=1
+    debug_print('getting save file '+str(counter),end='\n')
+    save_file = tk.filedialog.asksaveasfilename(title='Select or enter project file',filetypes = (("python files","*.py"),("all files","*.*")))
+    root.deiconify() # Get GUI4sher window back
+  
+  debug_print('Got save file',end='\n')
+  if not save_file.endswith('.py'):  # add .py extension to files without a .py extension
+    save_file += '.py'
+  change_title('Project in '+save_file)
+  save_gui4sher()
+  shell.focus_set()
+# end shell not in app
+
+
+
+# source
+read_file = __file__
+
+# begin shell not in app
+# not saved
+get_save()
+# end shell not in app
+
+
+# begin shell not in app
+''' set up button clicks for buttons '''
+edit_mode = 'SHELL'
+def toggle_edit():
+  global edit_mode
+  global clicks_window
+  global shell
+  if edit_mode == 'SHELL':
+    edit_mode = 'CLICKS'
+    click_toggle.config(text='Change\nClicks')
+    shell.pack_forget()
+    clicks_window.pack(fill=tk.BOTH, expand = tk.YES, side="left") 
+    shell_scroll.config(command=clicks_window.yview)
+    shell_hscroll.config(command=clicks_window.xview)
+  else:
+    edit_mode = 'SHELL'
+    debug_print('Changing clicks',end='\n')
+    click_toggle.config(text='Edit\nClicks')
+    clicks_window.pack_forget()
+    shell.pack(fill=tk.BOTH, expand = tk.YES, side="left")
+    shell_scroll.config(command=shell.yview)
+    shell_hscroll.config(command=shell.xview)
+    debug_print('executing changing clicks functions',end='\n')
+    debug_print('Executing:\n'+clicks_window.get('1.0','end'))
+    my_exec(clicks_window.get('1.0','end'),globals())
+    debug_print('Widget Actions Changed\n')
+    say('Widget Actions Changed\n',color='gray')
+    save_gui4sher()
+
+click_toggle.config(command=toggle_edit)
+make_app_button.config(command=make_app)
+
+def names_command():
+  for name in names():
+    say(name)
+
+names_button.config(command=names_command)
 
 
 
@@ -1855,7 +2198,7 @@ def place_label(text,name='',fill='',outline='black',font=('times',14)):
   # get position of upper left corner of label
   anchor = mouse_ask('Click on the position of the Label "'+name+'"')
   # make the label
-  labl = Label(anchor,text)
+  labl = Label(anchor,text,name)
   labl.set_name(name)
   labl.set_fill(fill)
   labl.set_outline(outline)
@@ -1870,7 +2213,7 @@ def place_entry(width,name='',fill='white',outline='black',font=('times',14)):
   # get position of upper left corner of Entry
   anchor = mouse_ask('Click on the position of the Entry "'+name+'"')
   # make the Entry
-  entr = Entry(anchor,width)
+  entr = Entry(anchor,width,name)
   entr.set_name(name)
   entr.set_fill(fill)
   entr.set_outline(outline)
@@ -1885,7 +2228,7 @@ def place_text(width,height,name='',fill='white',outline='black',font=('times',1
   # get position of upper left corner of Entry
   anchor = mouse_ask('Click on the position of the Text "'+name+'"')
   # make the Entry
-  box = Text(anchor,width,height)
+  box = Text(anchor,width,height,name)
   box.set_name(name)
   box.set_fill(fill)
   box.set_outline(outline)
@@ -1902,7 +2245,7 @@ def place_button(text,name='',fill='cyan',outline='black',font=('times',14)):
   anchor = mouse_ask('Click on the position of the Button "'+name+'"')
   # make the button
   debug_print('Creating Buttton',end='\n')
-  butn = Button(anchor,text)
+  butn = Button(anchor,text,name)
   debug_print('Button created',end='\n')
   butn.set_name(name)
   debug_print('Button named',end='\n')
@@ -1920,7 +2263,7 @@ def place_check(text,name='',fill='#EEEEEE',outline='black',font=('times',14)):
   # get position of upper left corner of Button
   anchor = mouse_ask('Click on the position of the Check "'+name+'"')
   # make the button
-  butn = Check(anchor,text)
+  butn = Check(anchor,text,name)
   butn.set_name(name)
   butn.set_fill(fill)
   butn.set_outline(outline)
@@ -1935,7 +2278,7 @@ def place_list(items,name='',fill='yellow',outline='black',font=('times',14)):
   # get position of upper left corner of List
   anchor = mouse_ask('Click on the position of the List "'+name+'"')
   # make the List
-  lst = List(anchor,items)
+  lst = List(anchor,items,name)
   lst.set_name(name)
   lst.set_fill(fill)
   lst.set_outline(outline)
@@ -1943,62 +2286,14 @@ def place_list(items,name='',fill='yellow',outline='black',font=('times',14)):
   lst.draw()
   exec(name+'=objects[-1]',globals())
     
-def place_radio(text,group='',name='',fill='light green',outline='dark blue',font=('Courier',14)):
-  global objects
-  ''' Interactive placement of a Radio. '''
-  if not group in group_names: # if you don't use an existing group
-    group = valid_name(group,'RadioGroup') # make sure the name of the RadioGroup is valid
-    group_name = group
-    the_group = RadioGroup(group) # create the new RadioGroup
-    exec(the_group.to_exec(),globals())
-  else:
-    # find the group specified by the user
-    for thing in objects:
-      if thing.get_name() == group:
-        the_group = thing
-  name = valid_name(name,'Radio',prefix=group) # make sure the name of the object is valid
-  # get position of upper left corner of Radio
-  anchor = mouse_ask('Click on the position of the Radio "'+name+'"')
-  # make the List
-  rad = Radio(anchor,text,the_group,name)
-  rad.set_fill(fill)
-  rad.set_outline(outline)
-  rad.set_font(font)
-  rad.draw()
-  exec(name+'=objects[-1]',globals())
       
 
-# end shell not in app
+
+# not saved
+root.mainloop()
 
   
+# end shell not in app
 
 
 
-def save_gui4sher(): return None
-
-change_title("app")
-''' All the objects in the graphics are below '''
-ccc = Circle(Point(284.0,123.0),64.03124237432849)
-ccc.set_name('ccc')
-ccc.set_fill('brown')
-ccc.set_outline('black')
-ccc.set_width('1')
-ccc.draw()
-color = Entry(Point(212.0,201.0),18)
-color.set_name('color')
-color.set_fill('white')
-color.set_outline('black')
-color.set_width('18')
-color.set_text('')
-color.set_font(('times', 14))
-color.set_justify('left')
-color.draw()
-
-def color_return():
-	ccc.set_fill(color.get_text())
-	color.set_text('')
-
-
-
-
-root.mainloop()
