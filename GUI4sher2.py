@@ -12,7 +12,7 @@ from math import sqrt
 from contextlib import redirect_stdout
 # begin shell not in app
 # redirect stderr and stdout to strings
-GUI_DEBUG=True  # can turn on and off debugging by changing this
+GUI_DEBUG=False  # can turn on and off debugging by changing this
 
 def debug_print(to_print,end=''):
   ''' calls a print statement and puts it into the shell window '''
@@ -141,6 +141,41 @@ class Shell(tk.Text):
         self.insert_text(stdout)
       except: # catch all exceptions
         self.insert_error(stderr)
+
+''' This is the code for the clicks widget in python (text window with autoindent '''
+class IndentText(tk.Text):
+  def __init__(self, parent, **kwargs):
+    tk.Text.__init__(self, parent, **kwargs)
+    self.bind('<Key>', self.on_key) # setup handler to process pressed keys
+
+  def insert_text(self, txt='', end='\n'):
+    ''' Appends the given text to the end of the Text Box. '''
+    self.insert(tk.END, txt+end)
+    self.see(tk.END) # make sure it is visible
+
+  # handler to process keyboard input
+  def on_key(self, event):
+    debug_print('In on_key: '+str(event),end='\n')
+    if event.char == '\r':
+      debug_print('Hit return',end='\n')
+      debug_print('Cursor: '+tk.INSERT,end='\n')
+      # extract the command input
+      line = self.get('current linestart', 'current lineend')
+      after = self.get('insert','current lineend')
+      self.delete('insert','current lineend') # delete the characters to be moved to the end of the line
+      debug_print('Indent_text line: '+line+'\nAfter: '+after,end='\n')
+      self.add_indent(line,after)
+      return "break" # disable the default handling of Enter key
+
+  def add_indent(self,line,after):
+    ''' Auto Indents Line '''
+    debug_print('AutoIndent line: '+line,end='\n')
+    spaces = re.match(r"^(\s*).*$", line)
+    debug_print('Inserting: "'+spaces.group(1)+after,end='"\n')
+    self.insert(tk.INSERT,'\n'+spaces.group(1)+after)
+    self.mark_set('insert','insert -'+str(len(after))+' chars')
+    self.see('insert')
+
 # end shell not in app
 ''' this sets up the window with
   * header (with project file)
@@ -241,7 +276,7 @@ shell_scroll.config(command=shell.yview)
 shell_hscroll.config(command=shell.xview)
 
 # clicks window
-clicks_window = tk.Text(bottom,wrap=tk.NONE, yscrollcommand=shell_scroll.set, xscrollcommand=shell_hscroll.set, width=80, height=16,  font=('Lucida Console', 12))
+clicks_window = IndentText(bottom,wrap=tk.NONE, yscrollcommand=shell_scroll.set, xscrollcommand=shell_hscroll.set, width=80, height=16,  font=('Lucida Console', 12))
 
 
 # end shell not in app
@@ -588,7 +623,11 @@ class Rectangle(_BBox):
     def _draw(self, canvas):
         p1 = self.p1
         p2 = self.p2
-        return canvas.create_rectangle(p1.x,p1.y,p2.x,p2.y,outline=self.get_outline(),fill=self.get_fill(),width=self.get_width())
+        try:
+          return canvas.create_rectangle(p1.x,p1.y,p2.x,p2.y,outline=self.get_outline(),fill=self.get_fill(),width=self.get_width())
+        except Exception as e:
+          say(str(e),color='red') # tell user about problem drawing
+          return None
         
     def clone(self):
         other = Rectangle(self.p1, self.p2)
@@ -623,7 +662,11 @@ class Oval(_BBox):
     def _draw(self, canvas):
         p1 = self.p1
         p2 = self.p2
-        return canvas.create_oval(p1.x,p1.y,p2.x,p2.y,outline=self.get_outline(),fill=self.get_fill(),width=self.get_width())
+        try:
+          return canvas.create_oval(p1.x,p1.y,p2.x,p2.y,outline=self.get_outline(),fill=self.get_fill(),width=self.get_width())
+        except Exception as e:
+          say(str(e),color='red') # tell user about problem drawing
+          return None
 
     def to_exec(self):
       ''' creates commands to create the oval '''
@@ -687,7 +730,11 @@ class Line(_BBox):
     def _draw(self, canvas):
         p1 = self.p1
         p2 = self.p2
-        return canvas.create_line(p1.x,p1.y,p2.x,p2.y,fill=self.get_outline(),width=self.get_width(),arrow=self.get_arrow())
+        try:
+          return canvas.create_line(p1.x,p1.y,p2.x,p2.y,fill=self.get_outline(),width=self.get_width(),arrow=self.get_arrow())
+        except Exception as e:
+          say(str(e),color='red') # tell user about problem drawing
+          return None
 
     def set_outline(self, color):
         """Set line color to color"""
@@ -740,7 +787,12 @@ class Dashed_Line(_BBox):
     def _draw(self, canvas):
         p1 = self.p1
         p2 = self.p2
-        return canvas.create_line(p1.x,p1.y,p2.x,p2.y,fill=self.get_outline(),dash=self.get_dash(),width=self.get_width(),arrow=self.get_arrow())
+        try:
+          return canvas.create_line(p1.x,p1.y,p2.x,p2.y,fill=self.get_outline(),dash=self.get_dash(),width=self.get_width(),arrow=self.get_arrow())
+        except Exception as e:
+          say(str(e),color='red') # tell user about problem drawing
+          return None
+
 
     def set_dash(self,dash):
       self.dash = dash
@@ -806,7 +858,12 @@ class Polygon(GraphicsObject):
         for p in self.points:
             args.append(p.x)
             args.append(p.y)
-        return graphics.create_polygon(*args,outline=self.get_outline(),fill=self.get_fill(),width=self.get_width()) 
+        try:
+          return graphics.create_polygon(*args,outline=self.get_outline(),fill=self.get_fill(),width=self.get_width()) 
+        except Exception as e:
+          say(str(e),color='red') # tell user about problem drawing
+          return None
+
 
     def to_exec(self):
       ''' creates commands to create the polygon '''
@@ -831,7 +888,12 @@ class Label(GraphicsObject):
     
     def _draw(self, canvas):
         p = self.anchor
-        return canvas.create_text(p.x,p.y,anchor='nw',fill=self.get_outline(),text=self.get_text(),font=self.get_font(), justify=self.get_justify())
+        try:
+          return canvas.create_text(p.x,p.y,anchor='nw',fill=self.get_outline(),text=self.get_text(),font=self.get_font(), justify=self.get_justify())
+        except Exception as e:
+          say(str(e),color='red') # tell user about problem drawing
+          return None
+
         
     def _move(self, dx, dy):
         self.anchor.move(dx,dy)
@@ -1845,7 +1907,7 @@ def save_gui4sher():
 ''')
   debug_print('try:\n\texec(clicks_window.get(\'1.0\',\'end\'))\nexcept:\n\tsay(sys.exc_info(),color=red,font=("courier",14,"bold"))\n')
   save_lines +='''
-  my_exec(clicks_window.get(\'1.0\',\'end\'),globals())
+my_exec(clicks_window.get(\'1.0\',\'end\'),globals())
 '''
   # read all lines from original file 
   reader.close()
