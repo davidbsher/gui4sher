@@ -720,7 +720,9 @@ class Dashed_Line(_BBox):
     def set_dash(self,dash):
       self.dash = dash
       if self.id:
-        self.canvas.itemconfig(self.id,dash=self.get_dash())
+          self.canvas.itemconfig(self.id,dash=self.get_dash())
+          save_gui4sher() # update the save file
+          root.update()
 
     def get_dash(self):
       return self.dash

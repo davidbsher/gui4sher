@@ -872,6 +872,14 @@ class Polygon(GraphicsObject):
         arguments += 'Point('+str(point.x)+','+str(point.y)+'),'
       return super()._to_exec().format(arguments[:-1])   # :-1 gets rid of last ,
 
+def font_string(font):
+  ''' returns the string corresponding to the font '''
+  if isinstance(font,str):
+    # put quotes around the font if it is represented as a string
+    return '"'+font+'"'
+  # otherwise just turn it into a string
+  return str(font)
+
 class Label(GraphicsObject):
     
     def __init__(self, p, text, name):
@@ -958,7 +966,7 @@ class Label(GraphicsObject):
                      self.name + ".set_outline('"+ self.get_outline() + "')",
                      self.name + ".set_width('"+ str(self.get_width())+ "')",
                      self.name + ".set_text('"+ self.get_text()+ "')",
-                     self.name + '.set_font(' + str(self.get_font()) + ')',
+                     self.name + ".set_font(" + font_string(self.get_font()) + ")",
                      self.name + '.draw()']
       return '''
 '''.join(exec_lines)
@@ -1004,7 +1012,11 @@ class Entry(GraphicsObject):
 
     def _draw(self, canvas):
         p = self.anchor
-        the_entry = canvas.create_window(p.x,p.y,window=self.frm,anchor='nw')
+        try:
+          the_entry = canvas.create_window(p.x,p.y,window=self.frm,anchor='nw')
+        except Exception as e:
+          say(str(e),color='red') # tell user about problem drawing
+          return None
         self.entry.pack()
         self.entry.focus_set()
         return the_entry
@@ -1124,7 +1136,7 @@ class Entry(GraphicsObject):
                      self.name + ".set_outline('"+ self.get_outline() + "')",
                      self.name + ".set_width('"+ str(self.get_width())+ "')",
                      self.name + ".set_text('"+ self.text.get()+ "')",
-                     self.name + '.set_font(' + str(self.get_font()) + ')',
+                     self.name + ".set_font(" + font_string(self.get_font()) + ")",
                      self.name + '.set_justify(\''+self.get_justify() + '\')',
                      self.name + '.draw()']
       return '''
@@ -1160,7 +1172,11 @@ class Text(GraphicsObject):
 
     def _draw(self, canvas):
         p = self.anchor
-        the_box = canvas.create_window(p.x,p.y,window=self.frm,anchor='nw')
+        try:
+          the_box = canvas.create_window(p.x,p.y,window=self.frm,anchor='nw')
+        except Exception as e:
+          say(str(e),color='red') # tell user about problem drawing
+          return None
         self.box.pack()
         self.box.focus_set()
         return the_box
@@ -1249,7 +1265,7 @@ class Text(GraphicsObject):
                      self.name + ".set_width('"+ str(self.get_width())+ "')",
                      self.name + ".set_height('"+ str(self.get_height())+ "')",
                      self.name + ".set_text('''"+ self.get_text()+ "''')", # text has multiple lines
-                     self.name + '.set_font(' + str(self.get_font()) + ')',
+                     self.name + ".set_font(" + font_string(self.get_font()) + ")",
                      self.name + '.draw()']
       return '''
 '''.join(exec_lines)
@@ -1298,7 +1314,11 @@ class Button(GraphicsObject):
 
     def _draw(self, canvas):
         p = self.anchor
-        the_button = canvas.create_window(p.x,p.y,window=self.frm,anchor='nw')
+        try:
+          the_button = canvas.create_window(p.x,p.y,window=self.frm,anchor='nw')
+        except Exception as e:
+          say(str(e),color='red') # tell user about problem drawing
+          return None
         self.button.pack()
         return the_button
 
@@ -1414,7 +1434,7 @@ class Button(GraphicsObject):
                      self.name + ".set_outline('"+ self.get_outline() + "')",
                      self.name + ".set_width('"+ str(self.get_width())+ "')",
                      self.name + ".set_text('"+ self.get_text()+ "')",
-                     self.name + '.set_font(' + str(self.get_font()) + ')',
+                     self.name + ".set_font(" + font_string(self.get_font()) + ")",
                      self.name + '.set_justify(\''+self.get_justify() + '\')',
                      self.name + '.draw()'
                      ]
@@ -1464,7 +1484,11 @@ class Check(GraphicsObject):
 
     def _draw(self, canvas):
         p = self.anchor
-        the_button = canvas.create_window(p.x,p.y,window=self.frm,anchor='nw')
+        try:
+          the_button = canvas.create_window(p.x,p.y,window=self.frm,anchor='nw')
+        except Exception as e:
+          say(str(e),color='red') # tell user about problem drawing
+          return None
         self.button.pack()
         return the_button
 
@@ -1591,7 +1615,7 @@ class Check(GraphicsObject):
                      self.name + ".set_outline('"+ self.get_outline() + "')",
                      self.name + ".set_width('"+ str(self.get_width())+ "')",
                      self.name + ".set_text('"+ self.get_text()+ "')",
-                     self.name + '.set_font(' + str(self.get_font()) + ')',
+                     self.name + ".set_font(" + font_string(self.get_font()) + ")",
                      self.name + '.set_justify(\''+self.get_justify() + '\')',
                      self.name + '.set_checked(\''+str(self.get_checked()) + '\')',
                      self.name + '.draw()'
@@ -1647,7 +1671,11 @@ class List(GraphicsObject):
 
     def _draw(self, canvas):
         p = self.anchor
-        the_listbox = canvas.create_window(p.x,p.y,window=self.frm,anchor='nw')
+        try:
+          the_listbox = canvas.create_window(p.x,p.y,window=self.frm,anchor='nw')
+        except Exception as e:
+          say(str(e),color='red') # tell user about problem drawing
+          return None
         self.list.pack()
         return the_listbox
 
@@ -1668,12 +1696,15 @@ class List(GraphicsObject):
         ''' List of items in List. '''
         to_return = []
         # make a list of items in the list
-        for item in self.list.get(0,self.list.size()):
+        for item in self.list.get(0,self.list.size()-1):
           to_return.append(item)
         return to_return
 
     def set_items(self,items):
       ''' Change items in List. '''
+      # first empty the list
+      self.list.delete(0,self.list.size()-1)
+      # then put new list in
       for item in items:
         self.add(item)
 
@@ -1811,7 +1842,7 @@ class List(GraphicsObject):
                      self.name + ".set_outline('"+ self.get_outline() + "')",
                      self.name + ".set_width('"+ str(self.get_width())+ "')",
                      self.name + ".set_height('"+ str(self.get_height())+ "')",
-                     self.name + '.set_font(' + str(self.get_font()) + ')',
+                     self.name + ".set_font(" + font_string(self.get_font()) + ")",
                      self.name + '.set_justify(\''+self.get_justify() + '\')',
                      self.name + '.draw()']
       return '''
@@ -1846,6 +1877,14 @@ brown = 'brown'
 cyan = 'cyan'
 magenta = 'magenta'
 pink = 'pink'
+
+''' common fonts '''
+serif = 'serif'
+sans_serif = 'sans-serif'
+monospaced = 'monospaced'
+courier = 'courier'
+helvetica = 'helvetica'
+times = 'times'
 
 
 
@@ -2255,33 +2294,37 @@ def place_polygon(name='',fill='',outline='black',width=1):
     
 ''' interactive functions to put down graphics and gui '''
 def place_label(text,name='',fill='',outline='black',font=('times',14)):
-  ''' Interactive placement of a label. '''
-  name = valid_name(name,'Label') # make sure the name of the object is valid
-  # get position of upper left corner of label
-  anchor = mouse_ask('Click on the position of the Label "'+name+'"')
-  # make the label
-  labl = Label(anchor,text,name)
-  labl.set_name(name)
-  labl.set_fill(fill)
-  labl.set_outline(outline)
-  labl.set_font(font)
-  labl.draw()
-  exec(name+'=objects[-1]',globals())
+    ''' Interactive placement of a label. '''
+    try:
+      name = valid_name(name,'Label') # make sure the name of the object is valid
+      # get position of upper left corner of label
+      anchor = mouse_ask('Click on the position of the Label "'+name+'"')
+      # make the label
+      labl = Label(anchor,text,name)
+      labl.set_name(name)
+      labl.set_fill(fill)
+      labl.set_outline(outline)
+      labl.set_font(font)
+      labl.draw()
+      exec(name+'=objects[-1]',globals())
+    except: pass
     
 ''' interactive functions to put down graphics and gui '''
 def place_entry(width,name='',fill='white',outline='black',font=('times',14)):
-  ''' Interactive placement of a label. '''
-  name = valid_name(name,'Entry') # make sure the name of the object is valid
-  # get position of upper left corner of Entry
-  anchor = mouse_ask('Click on the position of the Entry "'+name+'"')
-  # make the Entry
-  entr = Entry(anchor,width,name)
-  entr.set_name(name)
-  entr.set_fill(fill)
-  entr.set_outline(outline)
-  entr.set_font(font)
-  entr.draw()
-  exec(name+'=objects[-1]',globals())
+    ''' Interactive placement of a label. '''
+    try:
+      name = valid_name(name,'Entry') # make sure the name of the object is valid
+      # get position of upper left corner of Entry
+      anchor = mouse_ask('Click on the position of the Entry "'+name+'"')
+      # make the Entry
+      entr = Entry(anchor,width,name)
+      entr.set_name(name)
+      entr.set_fill(fill)
+      entr.set_outline(outline)
+      entr.set_font(font)
+      entr.draw()
+      exec(name+'=objects[-1]',globals())
+    except: pass
 
 ''' interactive functions to put down graphics and gui '''
 def place_text(width,height,name='',fill='white',outline='black',font=('times',10)):
