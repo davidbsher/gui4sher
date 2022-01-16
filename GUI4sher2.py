@@ -10,7 +10,7 @@ from math import sqrt
 
 
 from contextlib import redirect_stdout
-# begin shell not in app
+
 # redirect stderr and stdout to strings
 GUI_DEBUG=False  # can turn on and off debugging by changing this
 
@@ -23,9 +23,8 @@ def debug_print(to_print,end=''):
     shell.tag_configure('debug',foreground='blue',font=('Consolas', 12, 'italic'))
     shell.mark_set(tk.INSERT, tk.END) # make sure the input cursor is at the end
     shell.cursor = shell.index(tk.INSERT) # save the input position
-# end shell not in app
 
-# begin shell not in app
+
 say_number = 0    # makes all the tags different
 def say(to_print,color='#884400',font=('serif',12),end='\n'):
   global say_number
@@ -176,7 +175,6 @@ class IndentText(tk.Text):
     self.mark_set('insert','insert -'+str(len(after))+' chars')
     self.see('insert')
 
-# end shell not in app
 ''' this sets up the window with
   * header (with project file)
   * graphics
@@ -195,70 +193,56 @@ row_number = 0
 
 # GUIframe holds clickable stuff
 GUIframe = tk.Frame(root)
-GUIframe.grid(row=row_number)
+GUIframe.grid(row=row_number,sticky='nesw')
 row_number+=1  # next row
 GUIframe.columnconfigure(0,weight=1)
 GUIframe.rowconfigure(0,weight=1)
 # top frame will hold graphics window
 top = tk.Frame(GUIframe)
-top.pack(side=tk.LEFT)
-top.columnconfigure(0, weight=1)
-top.rowconfigure(0, weight=1)
+top.grid(row=0,column=0,rowspan=2,sticky='nesw')
 
-# begin shell not in app
+
 # buttons frame holds control buttons
 buttons = tk.Frame(GUIframe)
-buttons.pack(side=tk.RIGHT)
+
 
 
 # click_toggle will switch between the python shell and the clicks editor
-click_toggle = tk.Button(buttons,
+click_toggle = tk.Button(GUIframe,
                         width = 6,
                         text='Edit\nClicks',
                         bg = 'lightgreen',
                         fg = 'black',
                         font = 'courier',
                         justify = 'cent')
-click_toggle.pack()
+click_toggle.grid(row=0,column=1,sticky='nesw')
 
-# make_app_button will call make_app to create an app from the code
-make_app_button = tk.Button(buttons,
-                        width = 4,
-                        text='Make\nApp',
-                        bg = 'lightgreen',
-                        fg = 'black',
-                        font = 'courier',
-                        justify = 'cent')
-make_app_button.pack()
 
 # names_ button will output to the shell all the names of the graphics and GUI objects
-names_button = tk.Button(buttons,
+names_button = tk.Button(GUIframe,
                         width = 5,
                         text = 'Names',
                         bg = 'lightgreen',
                         fg = 'black',
                         font = 'courier',
                         justify = 'cent')
-names_button.pack()
-
-                         
-# end shell not in app
+names_button.grid(row=1,column=1,sticky='nesw')
+buttons.grid(row=0,column=1,sticky='nesw')
 
 # bottom frame will hold shell
 bottom = tk.Frame(root)
-bottom.grid(row=row_number)
+bottom.grid(row=row_number,sticky='nesw')
 row_number+=1  # next row
 bottom.columnconfigure(0, weight=1)
 bottom.rowconfigure(0, weight=1)
 
 # copy_frame will hold copyright information
 copy_frame = tk.Frame(root,height=16)
-copy_frame.grid(row=row_number)
+copy_frame.grid(row=row_number,sticky='nesw')
 row_number+=1  # next row
 copy_frame.columnconfigure(0, weight=1)
 copy_frame.rowconfigure(0, weight=1)
 
-# begin shell not in app
 ''' create scrollbars for shell '''
 # Vertical (y) Scroll Bar
 shell_scroll = tk.Scrollbar(bottom)
@@ -277,9 +261,6 @@ shell_hscroll.config(command=shell.xview)
 
 # clicks window
 clicks_window = IndentText(bottom,wrap=tk.NONE, yscrollcommand=shell_scroll.set, xscrollcommand=shell_hscroll.set, width=80, height=16,  font=('Lucida Console', 12))
-
-
-# end shell not in app
 
 
 def my_exec(cmd, globals=None, locals=None, description='source string'):
@@ -305,10 +286,8 @@ def my_exec(cmd, globals=None, locals=None, description='source string'):
 
 
 ''' define a canvas that captures mouse events '''
-GRAPHICS_WIDTH = 600
-GRAPHICS_HEIGHT = 300
 class MouseCanvas(tk.Canvas):
-  def __init__(self,parent=top,bg='snow',width=GRAPHICS_WIDTH,height=GRAPHICS_HEIGHT):
+  def __init__(self,parent=top,bg='snow',width=600,height=300):
     tk.Canvas.__init__(self,parent,bg=bg,width=width,height=height)
     self.click_point = tk.StringVar()
     self.click_point.set('Point(0,0)')  # start with 0,0 clicked
@@ -336,8 +315,8 @@ class MouseCanvas(tk.Canvas):
       self.tracking = False
     else:
       # put down initial tracking lines and draw them
-      self.vertical = self.create_line(0,0,0,GRAPHICS_HEIGHT,fill='lightgray')
-      self.horizontal = self.create_line(0,0,GRAPHICS_WIDTH,0,fill='lightgray')
+      self.vertical = self.create_line(0,0,0,self.winfo_height(),fill='lightgray')
+      self.horizontal = self.create_line(0,0,self.winfo_height(),0,fill='lightgray')
       self.tracking = True
       
 
@@ -347,8 +326,8 @@ class MouseCanvas(tk.Canvas):
       self.delete(self.vertical)
       self.delete(self.horizontal)
       # draw new tracking lines
-      self.vertical = self.create_line(event.x,0,event.x,GRAPHICS_HEIGHT,fill='lightgray')
-      self.horizontal = self.create_line(0,event.y,GRAPHICS_WIDTH,event.y,fill='lightgray')
+      self.vertical = self.create_line(event.x,0,event.x,self.winfo_height(),fill='lightgray')
+      self.horizontal = self.create_line(0,event.y,self.winfo_width(),event.y,fill='lightgray')
       
     
   
@@ -996,7 +975,7 @@ class Entry(GraphicsObject):
                               fg = self.get_outline(),
                               font = self.get_font())
         self.entry.bind("<Return>",self.handle_return)
-# begin shell not in app
+
         # put an empty definition for the return handler into the clicks window if no definition is already in the clicks window
         # put an empty definition for the click handler into the clicks window if no definition is already in the clicks window
         clicks = clicks_window.get('1.0','end')
@@ -1005,7 +984,6 @@ class Entry(GraphicsObject):
           debug_print('for '+self.get_name(),end='\n')
           clicks_window.insert('end','\ndef '+self.get_name()+'_return():\n\tpass\n')
         debug_print('Clicks:\n'+clicks_window.get('1.0','end'))
-# end shell not in app
 
     def __repr__(self):
         return "Entry({}, {})".format(self.anchor, self.width)
@@ -1069,14 +1047,13 @@ class Entry(GraphicsObject):
         if self.id:
             save_gui4sher() # update the save file
             root.update()
-# begin shell not in app
-       # translate old name to new name in clicks_window
+
+        # translate old name to new name in clicks_window
         clicks = clicks_window.get('1.0','end')
         clicks = re.sub(r'(\W)'+old_name+r'(\W)',r'\1'+name+r'\2',clicks) # change the old name to the new name in clicks
         clicks = re.sub(r'(\W)'+old_name+r'_return(\W)',r'\1'+name+r'_return\2',clicks) # change the old name to the new name in clicks
         clicks_window.delete('1.0','end')
         clicks_window.insert('end',clicks)
-# end shell not in app
            
 
             
@@ -1288,15 +1265,14 @@ class Button(GraphicsObject):
         self.frm = tk.Frame(graphics.master)
         self.set_width(len(text))
         debug_print('Button Object name: '+self.get_name(),end='\n')
-# begin shell not in app
+
         # put an empty definition for the click handler into the clicks window if no definition is already in the clicks window
         clicks = clicks_window.get('1.0','end')
         if clicks.find('def '+self.get_name()+'_click') == -1:
           debug_print('Putting click definition in ')
           debug_print('for '+self.get_name(),end='\n')
           clicks_window.insert('end','\ndef '+self.get_name()+'_click():\n\tpass\n')
-        debug_print('Clicks:\n'+clicks_window.get('1.0','end'))
-# end shell not in app
+
 
         self.button = tk.Button(self.frm,
                               width = len(text),
@@ -1347,14 +1323,14 @@ class Button(GraphicsObject):
         if self.id:
             save_gui4sher() # update the save file
             root.update()
-# begin shell not in app
+
         # translate old name to new name in clicks_window
         clicks = clicks_window.get('1.0','end')
         clicks = re.sub(r'(\W)'+old_name+r'(\W)',r'\1'+name+r'\2',clicks) # change the old name to the new name in clicks
         clicks = re.sub(r'(\W)'+old_name+r'_click(\W)',r'\1'+name+r'_click\2',clicks) # change the old name to the new name in clicks
         clicks_window.delete('1.0','end')
         clicks_window.insert('end',clicks)
-# end shell not in app
+
 
 
     def set_text(self,text):
@@ -1458,7 +1434,7 @@ class Check(GraphicsObject):
         self.set_width(len(text))
         self.checked = tk.BooleanVar()
         self.set_checked(False)
-# begin shell not in app
+
         # put an empty definition for the click handler into the clicks window if no definition is already in the clicks window
         clicks = clicks_window.get('1.0','end')
         if clicks.find('def '+self.get_name()+'_click') == -1:
@@ -1466,7 +1442,7 @@ class Check(GraphicsObject):
           debug_print('for '+self.get_name(),end='\n')
           clicks_window.insert('end','\ndef '+self.get_name()+'_click():\n\tpass\n')
         debug_print('Clicks:\n'+clicks_window.get('1.0','end'))
-# end shell not in app
+
         self.button = tk.Checkbutton(self.frm,
                               width = len(text),
                               text=text,
@@ -1528,14 +1504,14 @@ class Check(GraphicsObject):
         if self.id:
             save_gui4sher() # update the save file
             root.update()
-# begin shell not in app
+
        # translate old name to new name in clicks_window
         clicks = clicks_window.get('1.0','end')
         clicks = re.sub(r'(\W)'+old_name+r'(\W)',r'\1'+name+r'\2',clicks) # change the old name to the new name in clicks
         clicks = re.sub(r'(\W)'+old_name+r'_click(\W)',r'\1'+name+r'_click\2',clicks) # change the old name to the new name in clicks
         clicks_window.delete('1.0','end')
         clicks_window.insert('end',clicks)
-# end shell not in app
+
 
 
     def set_text(self,text):
@@ -1656,7 +1632,7 @@ class List(GraphicsObject):
         # add the items to a list
         self.set_items(items)
         self.list.bind("<<ListboxSelect>>",self.handle_select)
-# begin shell not in app
+
         # put an empty definition for the click handler into the clicks window if no definition is already in the clicks window
         clicks = clicks_window.get('1.0','end')
         if clicks.find('def '+self.get_name()+'_select') == -1:
@@ -1664,7 +1640,7 @@ class List(GraphicsObject):
           debug_print('for '+self.get_name(),end='\n')
           clicks_window.insert('end','\ndef '+self.get_name()+'_select():\n\tpass\n')
         debug_print('Clicks:\n'+clicks_window.get('1.0','end'))
-# end shell not in app
+
     def __repr__(self):
         to_return = "List({}, {})".format(self.anchor, self.width)
         return "List({}, {})".format(self.anchor, self.width)
@@ -1824,14 +1800,14 @@ class List(GraphicsObject):
         if self.id:
             save_gui4sher() # update the save file
             root.update()
-# begin shell not in app
+
         # translate old name to new name in clicks_window
         clicks = clicks_window.get('1.0','end')
         clicks = re.sub(r'(\W)'+old_name+r'(\W)',r'\1'+name+r'\2',clicks) # change the old name to the new name in clicks
         clicks = re.sub(r'(\W)'+old_name+r'_select(\W)',r'\1'+name+r'_select\2',clicks) # change the old name to the new name in clicks
         clicks_window.delete('1.0','end')
         clicks_window.insert('end',clicks)
-# end shell not in app
+
 
 
     def to_exec(self):
@@ -1888,16 +1864,13 @@ times = 'times'
 
 
 
-# begin shell not in app
 # not saved
 save_file = ''
-# end shell not in app
 
 # not saved
 NO_SAVE = '''
 # not saved'''
 
-# begin shell not in app
 def save_gui4sher():
   ''' save_gui4sher creates a gui4sher with all the current objects '''
   global read_file
@@ -1932,6 +1905,9 @@ def save_gui4sher():
   # set up clicks window in save file
   debug_print('clicks_window.insert(\'end\','+repr(clicks_window.get('1.0','end'))+')\n')
   save_lines += NO_SAVE+'\nclicks_window.insert(\'end\','+repr(clicks_window.get('1.0','end'))+')\n'
+  # set up shell window in save file
+  save_lines += NO_SAVE+'\nshell.insert(\'end\','+repr(shell.get('1.0','end'))+')'
+  save_lines += NO_SAVE+'\nshell.cursor = shell.index(tk.END)\n'
 
   # put in comment establishing objects
   save_lines +="''' All the objects in the graphics are below '''"+ '''
@@ -1967,79 +1943,6 @@ my_exec(clicks_window.get(\'1.0\',\'end\'),globals())
 
 
 
-''' creates a py file that generates an app with the graphics and gui but no shell '''  
-def make_app():
-  global read_file
-  global save_file
-    
-  root.withdraw()  # GUI4sher window dissapears
-  app_file = tk.filedialog.asksaveasfilename(title='Select or enter name for app',filetypes = (("python files","*.py"),("all files","*.*")))
-  root.deiconify() # Get GUI4sher window back
-
-  if len(app_file) == 0: # dialog was cancelled
-    say('Not making an app!',color='red')
-    return
-  if not app_file.endswith('.py'):  # add .py extension to files without any extension
-    app_file += '.py'
-
-  # open the basic gui4sher
-  reader = open(read_file,mode='r')
-  # open the file to save to 
-  saver = open(app_file,mode='w+')
-
-  # put in copyright line info
-  print("''' code here manages copyright notice '''",file=saver,flush = True)
-  print('\nauthors = "'+authors+'"',file=saver,flush = True)
-  print('\nthanks = "'+thanks+'"',file=saver,flush = True)
-  print('\nyear = "'+year+'"',file=saver,flush = True)
-
-  # don't do debug_print's in app
-  print("def debug_print(to_print,end=''):\n\tpass\n",file=saver,flush = True)
-
-
-  read_lines = True # this is true when one should copy lines from the file into the app
-  # copy all the lines from reader to saver except code lines with comment # not saved
-  for line in reader:
-    if read_lines:
-      if 0 == line.find(NO_SAVE):
-        # don't write this line or the next
-        reader.readline()
-      elif 0 == line.find('# begin shell not in app'):
-        # don't write line until # end shell not in app
-        read_lines = False
-      else:
-        print(line,end='',file=saver,flush=True)
-        debug_print('''Copied {}
-'''.format(line))
-    else:
-      if 0 == line.find('# end shell not in app'):
-        # start copying lines again
-        read_lines = True
-  # don't do any saving since app won't modify
-  print("def save_gui4sher(): return None\n",file=saver,flush=True)
-  # set up app title
-  print('change_title("'+os.path.basename(app_file)+'")',file=saver,flush = True)
-  
-  # put in comment establishing objects
-  print("''' All the objects in the graphics are below '''",file=saver,flush=True)
-  # put commands to put every object drawn on graphics window into saver
-  for obj in objects:
-    debug_print('Saving object in app: '+obj.to_exec())
-    print(obj.to_exec(),file=saver,flush=True)
-  # needed to make gui work right
-  debug_print('Saving clicks in app: '+clicks_window.get('1.0','end'))
-  print(clicks_window.get('1.0','end'),file=saver,flush=True)
-  print("root.mainloop()",file=saver,flush=True)
-  # finish files
-  reader.close()
-  saver.close()
-  debug_print('''Done make_app
-''')
-  # run the app
-  debug_print('''python "{}"
-'''.format(app_file))
-  system('python "{}"'.format(app_file))
-
 
 def get_save():
   ''' gets a file to save changes to.
@@ -2065,20 +1968,20 @@ def get_save():
   change_title('Project in '+save_file)
   save_gui4sher()
   shell.focus_set()
-# end shell not in app
+
 
 
 
 # source
 read_file = __file__
 
-# begin shell not in app
+
 # not saved
 get_save()
-# end shell not in app
 
 
-# begin shell not in app
+
+
 ''' set up button clicks for buttons '''
 edit_mode = 'SHELL'
 def toggle_edit():
@@ -2108,7 +2011,7 @@ def toggle_edit():
     save_gui4sher()
 
 click_toggle.config(command=toggle_edit)
-make_app_button.config(command=make_app)
+
 
 def names_command():
   for name in names():
@@ -2398,7 +2301,7 @@ def place_list(items,name='',fill='yellow',outline='black',font=('times',14)):
 root.mainloop()
 
   
-# end shell not in app
+
 
 
 
