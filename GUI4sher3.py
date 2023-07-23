@@ -1135,6 +1135,20 @@ class Label(GraphicsObject):
       return '''
 '''.join(exec_lines)
 
+def add_backslashes(input_string):
+    ''' ChatGPT wrote this to help me sanitize user strings '''
+    special_chars = ['"', "'", '\\']
+    output_string = ''
+
+    for char in input_string:
+        if char in special_chars:
+            output_string += '\\' + char
+        elif char == '\n':
+            output_string += '\\n'
+        else:
+            output_string += char
+    #say('Input: '+input_string+'\nOutput: '+output_string,color=magenta)
+    return output_string
 
 class Entry(GraphicsObject):
 
@@ -1303,7 +1317,7 @@ class Entry(GraphicsObject):
                      self.name + '.set_fill(\''+ self.get_fill() + '\')',
                      self.name + ".set_outline('"+ self.get_outline() + "')",
                      self.name + ".set_width('"+ str(self.get_width())+ "')",
-                     self.name + ".set_text('"+ self.text.get()+ "')",
+                     self.name + ".set_text('"+ add_backslashes(self.text.get())+ "')",
                      self.name + ".set_font(" + font_string(self.get_font()) + ")",
                      self.name + '.set_justify(\''+self.get_justify() + '\')',
                      self.name + '.draw()']
@@ -1438,7 +1452,7 @@ class Text(GraphicsObject):
                      self.name + ".set_outline('"+ self.get_outline() + "')",
                      self.name + ".set_width('"+ str(self.get_width())+ "')",
                      self.name + ".set_height('"+ str(self.get_height())+ "')",
-                     self.name + ".set_text('''"+ self.get_text()+ "''')", # text has multiple lines
+                     self.name + ".set_text('"+ add_backslashes(self.get_text())+ "')",
                      self.name + ".set_font(" + font_string(self.get_font()) + ")",
                      self.name + '.draw()']
       return '''

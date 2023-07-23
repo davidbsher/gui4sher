@@ -68,38 +68,6 @@ save_file = __file__
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 import tkinter as tk
 import sys, io, os
 import subprocess as subp
@@ -258,8 +226,8 @@ class IndentText(tk.Text):
     self.tag_configure("gui4sher", foreground="magenta")
   
   def show_position(self,event=None):
-      print("Showing position")
-      print(self.index("insert"))
+      #print("Showing position")
+      #print(self.index("insert"))
       names_button.config(text = str(self.index("insert")))
   
   def highlight_syntax(code_text, event=None):
@@ -322,9 +290,9 @@ class IndentText(tk.Text):
 
   # handler to process keyboard input
   def on_key(self, event):
-    print('In on_key')
-    print(str(event))
-    print(event.char,"hit")
+    #print('In on_key')
+    #print(str(event))
+    #print(event.char,"hit")
     self.show_position(event) # show position of cursor in names button
     if event.char == '\r':
       debug_print('Hit return',end='\n')
@@ -1229,6 +1197,20 @@ class Label(GraphicsObject):
       return '''
 '''.join(exec_lines)
 
+def add_backslashes(input_string):
+    ''' ChatGPT wrote this to help me sanitize user strings '''
+    special_chars = ['"', "'", '\\']
+    output_string = ''
+
+    for char in input_string:
+        if char in special_chars:
+            output_string += '\\' + char
+        elif char == '\n':
+            output_string += '\\n'
+        else:
+            output_string += char
+    #say('Input: '+input_string+'\nOutput: '+output_string,color=magenta)
+    return output_string
 
 class Entry(GraphicsObject):
 
@@ -1397,7 +1379,7 @@ class Entry(GraphicsObject):
                      self.name + '.set_fill(\''+ self.get_fill() + '\')',
                      self.name + ".set_outline('"+ self.get_outline() + "')",
                      self.name + ".set_width('"+ str(self.get_width())+ "')",
-                     self.name + ".set_text('"+ self.text.get()+ "')",
+                     self.name + ".set_text('"+ add_backslashes(self.text.get())+ "')",
                      self.name + ".set_font(" + font_string(self.get_font()) + ")",
                      self.name + '.set_justify(\''+self.get_justify() + '\')',
                      self.name + '.draw()']
@@ -1532,7 +1514,7 @@ class Text(GraphicsObject):
                      self.name + ".set_outline('"+ self.get_outline() + "')",
                      self.name + ".set_width('"+ str(self.get_width())+ "')",
                      self.name + ".set_height('"+ str(self.get_height())+ "')",
-                     self.name + ".set_text('''"+ self.get_text()+ "''')", # text has multiple lines
+                     self.name + ".set_text('"+ add_backslashes(self.get_text())+ "')",
                      self.name + ".set_font(" + font_string(self.get_font()) + ")",
                      self.name + '.draw()']
       return '''
@@ -2624,45 +2606,31 @@ def place_list(items,name='',fill='yellow',outline='black',font=('times',14)):
 
 
 
-
-
-
-
-
-
-
-
 # not to copy
 # not saved
-clicks_window.insert('end','\ndef test_button_click():\n    test_text.set_fill(yellow)\n    test_rectangle.set_fill(pink)\n')
+clicks_window.insert('end','\ndef test_entry_return():\n    pass\n\n\n\n')
 
 # not saved
-shell.insert('end','>> >> place_text(20,7)\nName of Text: test_text\n>> Click on the position of the Text "test_text"\n>> place_button(\'Test\',\'test_button\')\nClick on the position of the Button "test_button"\n>> place_rectangle()\nName of Rectangle: test_rectangle\n>> Click on a corner of rectangle "test_rectangle"\ncolor_valid False\nClick on the opposite corner of rectangle "test_rectangle"\n\nWidget Actions Changed\n\nWidget Actions Changed\n\n\n')
+shell.insert('end','>> >> Widget Actions Changed\n\n\n>> place_entry(10)\nName of Entry: test_entry\n>> Click on the position of the Entry "test_entry"\n>> \n>> place_text(20,10)\nName of Text: test_text\n>> Click on the position of the Text "test_text"\n>> Widget Actions Changed\n\n\n\n')
 # not saved
 shell.cursor = shell.index(tk.END)
 ''' All the objects in the graphics are below '''
-test_text = Text(Point(108.0,65.0),20,7,"test_text")
-test_text.set_fill('yellow')
+test_entry = Entry(Point(56.0,29.0),10,"test_entry")
+test_entry.set_fill('white')
+test_entry.set_outline('black')
+test_entry.set_width('10')
+test_entry.set_text('and \\ will also be shown \"correctly')
+test_entry.set_font(('times', 14))
+test_entry.set_justify('left')
+test_entry.draw()
+test_text = Text(Point(220.0,29.0),20,10,"test_text")
+test_text.set_fill('white')
 test_text.set_outline('black')
 test_text.set_width('20')
-test_text.set_height('7')
-test_text.set_text('''''')
+test_text.set_height('10')
+test_text.set_text('the \' will be correctly\nstored in my text')
 test_text.set_font(('times', 10))
 test_text.draw()
-test_button = Button(Point(305.0,95.0),"Test","test_button")
-test_button.set_fill('cyan')
-test_button.set_outline('black')
-test_button.set_width('4')
-test_button.set_text('Test')
-test_button.set_font(('times', 14))
-test_button.set_justify('center')
-test_button.draw()
-test_rectangle = Rectangle(Point(69.0,13.0),Point(442.0,249.0))
-test_rectangle.set_name('test_rectangle')
-test_rectangle.set_fill('pink')
-test_rectangle.set_outline('black')
-test_rectangle.set_width('1')
-test_rectangle.draw()
 
 my_exec(clicks_window.get('1.0','end'),globals())
 
