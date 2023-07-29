@@ -1121,6 +1121,12 @@ class Label(GraphicsObject):
           self.canvas.itemconfig(self.id,fill=self.get_fill())
           save_gui4sher() # update the save file
           root.update()
+    
+    def move_to(self):
+        """ Change the position of the label """
+        anchor = mouse_ask('Click on the position of the Label "'+self.name+'"') # get the new position
+        self.move(anchor.get_x()-self.anchor.get_x(),anchor.get_y()-self.anchor.get_y()) # change the position
+
 
     def to_exec(self):
       ''' creates commands to create the line '''
@@ -1309,6 +1315,11 @@ class Entry(GraphicsObject):
     def get_width(self):
       return self.width
 
+    def move_to(self):
+        """ Change the position of the entry """
+        anchor = mouse_ask('Click on the position of the Entry "'+self.name+'"') # get the new position
+        self.move(anchor.get_x()-self.anchor.get_x(),anchor.get_y()-self.anchor.get_y()) # change the position
+
 
     def to_exec(self):
       debug_print('Creating string to execute for Entry')
@@ -1442,6 +1453,11 @@ class Text(GraphicsObject):
 
     def get_width(self):
       return self.width
+
+    def move_to(self):
+        """ Change the position of the text """
+        anchor = mouse_ask('Click on the position of the Text "'+self.name+'"') # get the new position
+        self.move(anchor.get_x()-self.anchor.get_x(),anchor.get_y()-self.anchor.get_y()) # change the position
 
 
     def to_exec(self):
@@ -1618,10 +1634,14 @@ class Button(GraphicsObject):
           save_gui4sher() # update the save file
           root.update()
 
+    def move_to(self):
+        """ Change the position of the button """
+        anchor = mouse_ask('Click on the position of the Button "'+self.name+'"') # get the new position
+        self.move(anchor.get_x()-self.anchor.get_x(),anchor.get_y()-self.anchor.get_y()) # change the position
 
 
     def to_exec(self):
-      ''' creates commands to create the line '''
+      ''' creates commands to create the button '''
       exec_lines = [ self.name+ ' = ' + self.__class__.__name__ +'(Point('+str(self.anchor.x)+','+str(self.anchor.y)+'),"'+str(self.get_text())+'","'+self.get_name()+'")',
                      self.name + '.set_fill(\''+ self.get_fill() + '\')',
                      self.name + ".set_outline('"+ self.get_outline() + "')",
@@ -1805,10 +1825,15 @@ class Check(GraphicsObject):
           save_gui4sher() # update the save file
           root.update()
 
+    def move_to(self):
+        """ Change the position of the check """
+        anchor = mouse_ask('Click on the position of the Check "'+self.name+'"') # get the new position
+        self.move(anchor.get_x()-self.anchor.get_x(),anchor.get_y()-self.anchor.get_y()) # change the position
+
 
 
     def to_exec(self):
-      ''' creates commands to create the line '''
+      ''' creates commands to create the check '''
       exec_lines = [ self.name+ ' = ' + self.__class__.__name__ +'(Point('+str(self.anchor.x)+','+str(self.anchor.y)+'),"'+str(self.get_text())+'","'+self.get_name()+'")',
                      self.name + '.set_fill(\''+ self.get_fill() + '\')',
                      self.name + ".set_outline('"+ self.get_outline() + "')",
@@ -2037,11 +2062,15 @@ class List(GraphicsObject):
         clicks_window.delete('1.0','end')
         clicks_window.insert('end',clicks)
 
+    def move_to(self):
+        """ Change the position of the list """
+        anchor = mouse_ask('Click on the position of the List "'+self.name+'"') # get the new position
+        self.move(anchor.get_x()-self.anchor.get_x(),anchor.get_y()-self.anchor.get_y()) # change the position
 
 
     def to_exec(self):
       debug_print('Creating string to execute for Entry')
-      ''' creates commands to create the line '''
+      ''' creates commands to create the list '''
       exec_lines = [ self.name + ' = ' + self.__class__.__name__ +'(Point('+str(self.anchor.x)+','+str(self.anchor.y)+'),'+str(self.get_items())+',"'+self.get_name()+'")',
                      self.name + '.set_fill(\''+ self.get_fill() + '\')',
                      self.name + ".set_outline('"+ self.get_outline() + "')",
