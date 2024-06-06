@@ -1,21 +1,3 @@
-
-# not saved
-''' code here manages copyright notice '''
-# not saved
-authors = "David B. Sher"
-# not saved
-thanks = "John Zelle"
-# not saved
-year = "2020"
-
-# not saved
-NO_SAVE = '''
-# not saved'''
-
-
-# not saved
-save_file = __file__
-
 import tkinter as tk
 import sys, io, os
 import subprocess as subp
@@ -26,12 +8,16 @@ from tkinter import messagebox
 from os import getcwd,system
 from keyword import iskeyword
 from math import sqrt
+import tkinter.font as tkFont
+
 
 
 from contextlib import redirect_stdout
 
 # redirect stderr and stdout to strings
 GUI_DEBUG=False  # can turn on and off debugging by changing this
+
+
 
 def debug_print(to_print,end=''):
   ''' calls a print statement and puts it into the shell window '''
@@ -68,12 +54,21 @@ def ask(to_print,color='darkgreen',font=('serif',12),end=': '):
   
 ''' This is the code for the shell widget in python '''
 class Shell(tk.Text):
+  global text_font
   def __init__(self, parent, **kwargs):
     tk.Text.__init__(self, parent, **kwargs)
     self.bind('<Key>', self.on_key) # setup handler to process pressed keys
+    self.bind("<KeyRelease>", self.highlight_syntax)
     self.cmd = tk.StringVar()        # hold the last command issued
     self.set_asking(False)          # execute user input
     self.show_prompt()
+    self.tag_configure("syntax", foreground="blue")
+    self.tag_configure("string", foreground="green")
+    self.tag_configure("comment", foreground="red")
+    self.tag_configure("gui4sher", foreground="magenta")
+    self.tag_configure("method", foreground="brown")
+    self.tag_configure("places", foreground="purple")
+    self.configure(font = text_font)
 
   def insert_text(self, txt='', end='\n'):
     ''' Appends the given text to the end of the Text Box. '''
@@ -128,6 +123,62 @@ class Shell(tk.Text):
       return "break" # disable the default handling of Enter key
     if event.keysym == 'Escape':
       self.master.destroy() # quit the shell
+    
+  def highlight_syntax(code_text, event=None):
+        ''' This code was written by ChatGPT for syntax highlighting '''
+
+        code_text.tag_remove("syntax", "1.0", tk.END)
+
+        keywords = ["def", "class", "if", "else", "elif", "for", "while", "try", "except", "finally", "with", "as",
+                    "import", "from", "global", "nonlocal", "return", "yield", "assert", "lambda", "pass", "break",
+                    "continue", "in", "not", "is", "and", "or", "True", "False", "None", "say", "ask", "print"]
+        places   = ["place_circle", "place_rectangle", "place_oval", "place_line", "place_dashed_line", "place_polygon",
+                    "place_label", "place_button", "place_check", "place_entry", "place_text", "place_list" ]
+        
+        methods = [ ".set_width", ".set_outline", ".set_fill", ".set_font", ".set_text", ".set_arrow",
+                    ".get_width", ".get_outline", ".get_fill", ".get_font", ".get_text", ".get_arrow",
+                   ".selected", ".move", ".undraw", ".draw", ".move_to"]
+
+        string_pattern = r"\".*?\"|\'.*?\'"
+        comment_pattern = r"#.*?$"
+
+        code = code_text.get("1.0", tk.END)
+        tags = []
+
+        for keyword in keywords:
+            for match in re.finditer(r"\b{}\b".format(re.escape(keyword)), code):
+                start = match.start()
+                end = match.end()
+                code_text.tag_add("syntax", f"1.0+{start}c", f"1.0+{end}c")
+
+        for name in names():
+            for match in re.finditer(r"\b{}\b".format(re.escape(name)), code):
+                start = match.start()
+                end = match.end()
+                code_text.tag_add("gui4sher", f"1.0+{start}c", f"1.0+{end}c")
+
+        for place in places:
+            for match in re.finditer(r"\b{}\b".format(re.escape(place)), code):
+                start = match.start()
+                end = match.end()
+                code_text.tag_add("places", f"1.0+{start}c", f"1.0+{end}c")
+
+        for method in methods:
+            for match in re.finditer(r"\b{}\b".format(re.escape(method)), code):
+                start = match.start()
+                end = match.end()
+                code_text.tag_add("method", f"1.0+{start}c", f"1.0+{end}c")
+
+        for pattern, tag in [(string_pattern, "string"), (comment_pattern, "comment")]:
+            for match in re.finditer(pattern, code, re.MULTILINE):
+                start = match.start()
+                end = match.end()
+                code_text.tag_add(tag, f"1.0+{start}c", f"1.0+{end}c")
+
+        code_text.tag_config("syntax", foreground="blue")
+        code_text.tag_config("string", foreground="green")
+        code_text.tag_config("comment", foreground="red")
+
 
   def execute(self, cmd):
     ''' execute input from user '''
@@ -162,6 +213,7 @@ class Shell(tk.Text):
 
 ''' This is the code for the clicks widget in python (text window with autoindent '''
 class IndentText(tk.Text):
+  global text_font
   def __init__(self, parent, **kwargs):
     tk.Text.__init__(self, parent, **kwargs)
     self.bind('<Key>', self.on_key) # setup handler to process pressed keys
@@ -172,6 +224,8 @@ class IndentText(tk.Text):
     self.tag_configure("string", foreground="green")
     self.tag_configure("comment", foreground="red")
     self.tag_configure("gui4sher", foreground="magenta")
+    self.tag_configure("method", foreground="brown")
+    self.configure(font = text_font)
   
   def show_position(self,event=None):
       #print("Showing position")
@@ -185,7 +239,11 @@ class IndentText(tk.Text):
 
         keywords = ["def", "class", "if", "else", "elif", "for", "while", "try", "except", "finally", "with", "as",
                     "import", "from", "global", "nonlocal", "return", "yield", "assert", "lambda", "pass", "break",
-                    "continue", "in", "not", "is", "and", "or", "True", "False", "None"]
+                    "continue", "in", "not", "is", "and", "or", "True", "False", "None", "say", "ask"]
+        
+        methods = [ ".set_width", ".set_outline", ".set_fill", ".set_font", ".set_text", ".set_arrow",
+                    ".get_width", ".get_outline", ".get_fill", ".get_font", ".get_text", ".get_arrow",
+                   ".selected", ".move", ".undraw", ".draw"]
 
         string_pattern = r"\".*?\"|\'.*?\'"
         comment_pattern = r"#.*?$"
@@ -204,6 +262,12 @@ class IndentText(tk.Text):
                 start = match.start()
                 end = match.end()
                 code_text.tag_add("gui4sher", f"1.0+{start}c", f"1.0+{end}c")
+
+        for method in methods:
+            for match in re.finditer(r"\b{}\b".format(re.escape(method)), code):
+                start = match.start()
+                end = match.end()
+                code_text.tag_add("method", f"1.0+{start}c", f"1.0+{end}c")
 
         for pattern, tag in [(string_pattern, "string"), (comment_pattern, "comment")]:
             for match in re.finditer(pattern, code, re.MULTILINE):
@@ -263,6 +327,31 @@ root.title('Project in '+__file__)
 root.configure(bg='darkblue')
 root.columnconfigure(0, weight=1)
 root.rowconfigure(0, weight=1)
+
+# default font for GUI4sher Text
+text_font = tkFont.Font(family="Courier", size=12)
+
+# to change font size with mouse wheel
+# Mouse wheel handler for Mac, Windows and Linux
+# Windows, Mac: Binding to <MouseWheel> is being used
+# Linux: Binding to <Button-4> and <Button-5> is being used
+
+def MouseWheelHandler(event):
+    global wheel_count
+
+    def delta(event):
+        if event.num == 5 or event.delta < 0:
+            return -1 
+        return 1 
+
+    wheel_count += delta(event)
+    shell.configure(font= tkFont.Font(family="Courier", size=12+wheel_count))
+    clicks_window.configure(font= tkFont.Font(family="Courier", size=12+wheel_count))
+
+root.bind("<MouseWheel>",MouseWheelHandler)
+root.bind("<Button-4>",MouseWheelHandler)
+root.bind("<Button-5>",MouseWheelHandler)
+wheel_count = 0 # to track mouse wheel
 
 # position for each frame
 row_number = 0
@@ -414,6 +503,14 @@ class MouseCanvas(tk.Canvas):
 graphics = MouseCanvas()
 graphics.pack(fill=tk.BOTH, expand = 1)
 
+# not saved
+''' code here manages copyright notice '''
+# not saved
+authors = 'David B. Sher'
+# not saved
+thanks = 'John Zelle'
+# not saved
+year = '2020'
 
 copyright_string = tk.StringVar()
 copyright_string.set('Copyright {} {} with thanks to {}'.format(authors,year,thanks))
@@ -2133,6 +2230,12 @@ times = 'times'
 
 
 
+# not saved
+save_file = ''
+
+# not saved
+NO_SAVE = '''
+# not saved'''
 
 def save_gui4sher():
   ''' save_gui4sher creates a gui4sher with all the current objects '''
@@ -2191,6 +2294,7 @@ my_exec(clicks_window.get(\'1.0\',\'end\'),globals())
   reader.close()
   # open the file to save to 
   saver = open(save_file,mode='w+')
+  saver.reconfigure(encoding='utf-8')
   debug_print('Saving to ')
   debug_print(save_file)
   debug_print('''
@@ -2242,6 +2346,8 @@ def get_save():
 read_file = __file__
 
 
+# not saved
+get_save()
 
 
 
@@ -2564,33 +2670,11 @@ def place_list(items,name='',fill='yellow',outline='black',font=('times',14)):
       
 
 
+# not saved
+root.mainloop()
 
   
 
 
 
 
-
-# not to copy
-# not saved
-clicks_window.insert('end','\ndef c_b_click():\n    pass\n\n\n')
-
-# not saved
-shell.insert('end','>> place_button(\'Click\',\'c_b\')\nClick on the position of the Button "c_b"\n\n')
-# not saved
-shell.cursor = shell.index(tk.END)
-''' All the objects in the graphics are below '''
-c_b = Button(Point(106.0,96.0),"Click","c_b")
-c_b.set_fill('cyan')
-c_b.set_outline('black')
-c_b.set_width('5')
-c_b.set_text('Click')
-c_b.set_font(('times', 14))
-c_b.set_justify('center')
-c_b.draw()
-
-my_exec(clicks_window.get('1.0','end'),globals())
-
-
-# not saved
-root.mainloop()
