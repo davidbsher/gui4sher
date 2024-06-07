@@ -346,7 +346,11 @@ def MouseWheelHandler(event):
 
     wheel_count += delta(event)
     shell.configure(font= tkFont.Font(family="Courier", size=12+wheel_count))
+    # keep the number of lines of the shell window constant no matter the font
+    shell.configure(height=15)
     clicks_window.configure(font= tkFont.Font(family="Courier", size=12+wheel_count))
+    # keep the numberof lines of the clicks window constant no matter the font
+    clicks_window.configure(height=15)
 
 root.bind("<MouseWheel>",MouseWheelHandler)
 root.bind("<Button-4>",MouseWheelHandler)
