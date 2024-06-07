@@ -139,6 +139,7 @@ class Shell(tk.Text):
                     ".get_width", ".get_outline", ".get_fill", ".get_font", ".get_text", ".get_arrow",
                    ".selected", ".move", ".undraw", ".draw", ".move_to"]
 
+
         string_pattern = r"\".*?\"|\'.*?\'"
         comment_pattern = r"#.*?$"
 
